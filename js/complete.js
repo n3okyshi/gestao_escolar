@@ -536,7 +536,7 @@ function renderMatrixInputs() {
     container.innerHTML = currentMatrix.map((subj, i) => `
         <div class="flex justify-between items-center bg-white p-2 rounded border border-slate-100 mb-1">
             <span class="text-sm text-slate-700 font-medium flex-1">${escapeHTML(subj.name)}</span>
-            <input type="number" value="${subj.count}" min="1" max="10" 
+            <input type="number" value="${subj.count}" min="1" max="10"
                 onchange="currentMatrix[${i}].count = parseInt(this.value); updateSubjectSelect(); saveData();"
                 class="w-14 p-1 border rounded text-center text-xs">
         </div>
@@ -729,7 +729,7 @@ function renderTeacherList() {
 
     teacherRegistry.forEach(teacher => {
         let subjectsBadges = teacher.subjects.length > 0
-            ? teacher.subjects.slice(0, 3).map(s => `<span class="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100">${s}</span>`).join('')
+            ? teacher.subjects.slice(0, 3).map(s => `<span class="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100">${escapeHTML(s)}</span>`).join('')
             : '<span class="text-[10px] text-slate-400 italic">Nenhuma disciplina</span>';
 
         if (teacher.subjects.length > 3) subjectsBadges += `<span class="text-[10px] text-slate-400 ml-1">+${teacher.subjects.length - 3}</span>`;
@@ -745,7 +745,7 @@ function renderTeacherList() {
                     ${getInitials(teacher.name)}
                 </div>
                 <div class="overflow-hidden">
-                    <h4 class="font-bold text-slate-800 text-sm truncate">${teacher.name}</h4>
+                    <h4 class="font-bold text-slate-800 text-sm truncate">${escapeHTML(teacher.name)}</h4>
                     <div class="flex flex-wrap gap-1 mt-1">
                         ${subjectsBadges}
                     </div>
@@ -831,14 +831,14 @@ function renderTeacherSubjectMapping(teacherName) {
 
         header.innerHTML = `
             <div class="flex items-center gap-3">
-                <input type="checkbox" id="chk_sub_${safeSubId}" 
+                <input type="checkbox" id="chk_sub_${safeSubId}"
                     class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 transition"
                     ${isChecked ? 'checked' : ''}
                     onchange="toggleSubjectClassesArea('${safeSubId}', this.checked)">
-                
+
                 <div class="flex items-center gap-2">
                     <div class="w-3 h-3 rounded-full" style="background-color: ${sub.defaultColor}"></div>
-                    <span class="font-bold text-slate-700 text-sm">${sub.name}</span>
+                    <span class="font-bold text-slate-700 text-sm">${escapeHTML(sub.name)}</span>
                 </div>
             </div>
             <span class="text-xs font-medium text-slate-400" id="count_sub_${safeSubId}">
@@ -852,7 +852,7 @@ function renderTeacherSubjectMapping(teacherName) {
 
         const allBtn = `
             <label class="col-span-3 flex items-center gap-2 mb-2 pb-2 border-b border-slate-200 cursor-pointer">
-                <input type="checkbox" class="w-4 h-4 rounded text-slate-400" 
+                <input type="checkbox" class="w-4 h-4 rounded text-slate-400"
                 onchange="toggleAllClassesForSubject('${safeSubId}', this.checked)">
                 <span class="text-xs font-bold text-slate-500 uppercase">Selecionar Todas as Turmas</span>
             </label>
@@ -864,10 +864,10 @@ function renderTeacherSubjectMapping(teacherName) {
             const clsLabel = document.createElement('label');
             clsLabel.className = "flex items-center gap-2 cursor-pointer hover:bg-white p-1 rounded transition";
             clsLabel.innerHTML = `
-                <input type="checkbox" value="${clsName}" 
+                <input type="checkbox" value="${clsName}"
                     class="cls-check-${safeSubId} w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
                     ${isClassActive ? 'checked' : ''}>
-                <span class="text-xs text-slate-700 font-medium">${clsName}</span>
+                <span class="text-xs text-slate-700 font-medium">${escapeHTML(clsName)}</span>
             `;
             classesArea.appendChild(clsLabel);
         });
@@ -1141,7 +1141,7 @@ function renderSubjectsList() {
             <div class="flex items-center gap-2">
                 <div class="w-4 h-4 rounded-full shadow-sm" style="background-color: ${sub.defaultColor}"></div>
                 <div class="flex flex-col">
-                    <span class="text-sm font-medium text-slate-700 leading-none">${sub.name}</span>
+                    <span class="text-sm font-medium text-slate-700 leading-none">${escapeHTML(sub.name)}</span>
                 </div>
                 ${countBadge}
             </div>
@@ -1214,8 +1214,8 @@ function renderCurrentSchedule() {
                 const params = `'${day}', ${s}, '${escapeHTML(cls)}'`;
 
                 if (item) {
-                    body += `<td class="border p-1 h-20 align-top relative group" 
-                                ondragover="handleDragOver(event)" 
+                    body += `<td class="border p-1 h-20 align-top relative group"
+                                ondragover="handleDragOver(event)"
                                 ondrop="handleDrop(event, ${params})">
                         <div class="cell-content h-full w-full rounded p-1 flex flex-col justify-center items-center cursor-grab active:cursor-grabbing shadow-sm transition-all hover:scale-[1.02] ${isLocked ? 'ring-2 ring-red-400' : ''}"
                             style="background-color:${item.bgColor}; color:${item.textColor};"
@@ -1396,7 +1396,7 @@ function openResourceModal() {
     list.innerHTML = subjects.map((s, i) => `
         <div class="flex justify-between items-center mb-2 p-2 border-b">
             <span class="text-sm font-medium">${escapeHTML(s.name)}</span>
-            <input type="number" class="border w-16 p-1 rounded text-center" 
+            <input type="number" class="border w-16 p-1 rounded text-center"
                 value="${resourceLimits[s.name] || 99}" min="1" max="50"
                 onchange="resourceLimits['${escapeHTML(s.name)}'] = parseInt(this.value); saveData();">
         </div>
@@ -1554,7 +1554,7 @@ function addAlert(type, msg) {
 
     const div = document.createElement('div');
     div.className = `p-3 rounded-lg text-sm border flex items-center gap-2 ${colors[type]}`;
-    div.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4"></i> <span>${msg}</span>`;
+    div.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4"></i> <span>${escapeHTML(msg)}</span>`;
     document.getElementById('alertContainer').appendChild(div);
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
@@ -1567,7 +1567,7 @@ function showToast(msg, type = 'info') {
 
     const el = document.createElement('div');
     el.className = `${colors[type]} text-white px-4 py-3 rounded shadow-lg flex items-center gap-3 transition-all transform translate-x-full`;
-    el.innerHTML = `<span>${msg}</span>`;
+    el.innerHTML = `<span>${escapeHTML(msg)}</span>`;
 
     container.appendChild(el);
 
@@ -1591,20 +1591,20 @@ function startGeneration() {
     const activeAllocs = allocations.filter(a => a.active);
     if (!activeAllocs.length) return showToast("Nenhuma aula ativa para gerar.", "error");
     if (!classes.length) return showToast("Não há turmas cadastradas.", "error");
-    
+
     isGenerating = true;
-    
+
     document.getElementById('loadingOverlay').style.display = 'flex';
     document.getElementById('startBtn').classList.add('hidden');
     document.getElementById('stopBtn').classList.remove('hidden');
-    
+
     const loadingText = document.querySelector('#loadingOverlay p.animate-pulse');
     if(loadingText) loadingText.innerText = "Processando grade em alta velocidade...";
 
     const workerScript = `
     self.onmessage = function(e) {
         const { classes, globalDays, globalSlotsPerDay, allocations, lockedCells, resourceLimits, teacherConstraints } = e.data;
-        
+
         const NUM_DAYS = globalDays.length;
         const NUM_SLOTS = globalSlotsPerDay;
         const TOTAL_SLOTS = NUM_DAYS * NUM_SLOTS;
@@ -1616,7 +1616,7 @@ function startGeneration() {
         // Converte alocações grandes ("Matemática 5 aulas") em pequenas atividades ("Matemática Aula 1", "Matemática Aula 2")
         allocations.forEach(alloc => {
             if (!alloc.active) return;
-            
+
             // Prioridade: Aulas duplas e professores com muitas turmas tem prioridade maior
             const priority = (alloc.allowDouble ? 10 : 0) + (alloc.count > 4 ? 5 : 0);
 
@@ -1634,39 +1634,39 @@ function startGeneration() {
             }
         });
 
-        // Ordenação Heurística (MRV simplificado): 
+        // Ordenação Heurística (MRV simplificado):
         // Resolve primeiro quem tem mais restrições/prioridade.
         activities.sort((a, b) => b.priority - a.priority);
 
         // --- 2. ESTRUTURAS DE ESTADO (LOOKUP TABLES RAPIDAS) ---
         // Em vez de percorrer arrays, usamos mapas diretos para O(1) de acesso.
-        
+
         // [slot_index][turma] -> activityID (ou null)
-        let gridClass = new Array(TOTAL_SLOTS).fill(null).map(() => ({})); 
-        
+        let gridClass = new Array(TOTAL_SLOTS).fill(null).map(() => ({}));
+
         // [slot_index][professor] -> true/false
         let gridTeacher = new Array(TOTAL_SLOTS).fill(null).map(() => ({}));
-        
+
         // [dia][turma][materia] -> contador
         let dailySubjectCount = new Array(NUM_DAYS).fill(null).map(() => ({}));
-        
+
         // [slot_index][materia] -> contador (para recursos limitados)
         let resourceUsage = new Array(TOTAL_SLOTS).fill(null).map(() => ({}));
 
         // --- 3. APLICAÇÃO DE TRAVAS (LOCKED CELLS) ---
         // Preenche as tabelas com o que já está fixo
-        
+
         let lockedActivitiesIndices = new Set();
 
         for (let key in lockedCells) {
             const parts = key.split('-'); // DIA-SLOT-TURMA
             if (parts.length < 3) continue;
-            
+
             // Converte DIA-SLOT para índice linear (0 a 24)
             const dayIdx = globalDays.indexOf(parts[0]);
             const slotIdx = parseInt(parts[1]);
             const cls = parts.slice(2).join('-');
-            
+
             if (dayIdx === -1) continue; // Dia inválido (ex: backup antigo)
 
             const linearSlot = (dayIdx * NUM_SLOTS) + slotIdx;
@@ -1675,7 +1675,7 @@ function startGeneration() {
             // Marca ocupação nas tabelas
             gridClass[linearSlot][cls] = 'LOCKED';
             gridTeacher[linearSlot][alloc.teacher] = true;
-            
+
             // Contadores
             if (!dailySubjectCount[dayIdx][cls]) dailySubjectCount[dayIdx][cls] = {};
             dailySubjectCount[dayIdx][cls][alloc.subject] = (dailySubjectCount[dayIdx][cls][alloc.subject] || 0) + 1;
@@ -1685,10 +1685,10 @@ function startGeneration() {
 
             // Remove UMA atividade correspondente da lista de "a fazer"
             // Procura a primeira atividade compatível que ainda não foi travada
-            const actIndex = activities.findIndex((act, idx) => 
+            const actIndex = activities.findIndex((act, idx) =>
                 !lockedActivitiesIndices.has(idx) &&
-                act.class === cls && 
-                act.subject === alloc.subject && 
+                act.class === cls &&
+                act.subject === alloc.subject &&
                 act.teacher === alloc.teacher
             );
 
@@ -1701,7 +1701,7 @@ function startGeneration() {
         let pendingActivities = activities.filter((_, idx) => !lockedActivitiesIndices.has(idx));
 
         // --- 4. ENGINE DE BACKTRACKING (SIMPLIFICADO E RÁPIDO) ---
-        
+
         const MAX_OPS = 5000000; // 5 Milhões de operações (aprox 3-5 segundos)
         let ops = 0;
         let solutionFound = false;
@@ -1723,10 +1723,10 @@ function startGeneration() {
             // Heurística: Tenta slots aleatórios para evitar padrões repetitivos
             // (Em C++ faríamos LCV, em JS o shuffle é mais barato)
             // Otimização: Filtra slots impossíveis antes de loopar? Não, check direto é mais rápido.
-            
+
             // Embaralha slots a cada X iterações para variabilidade, ou usa pré-shuffled
             // Vamos usar uma permutação aleatória local
-            let slotsTried = [...allSlots]; 
+            let slotsTried = [...allSlots];
             // Fisher-Yates shuffle simplificado para performance
             for (let i = slotsTried.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -1762,10 +1762,10 @@ function startGeneration() {
                 // --- ALOCA ---
                 gridClass[slot][act.class] = act;
                 gridTeacher[slot][act.teacher] = true;
-                
+
                 if (!dailySubjectCount[day][act.class]) dailySubjectCount[day][act.class] = {};
                 dailySubjectCount[day][act.class][act.subject] = (dailySubjectCount[day][act.class][act.subject] || 0) + 1;
-                
+
                 if (!resourceUsage[slot][act.subject]) resourceUsage[slot][act.subject] = 0;
                 resourceUsage[slot][act.subject]++;
 
@@ -1811,13 +1811,13 @@ function startGeneration() {
                             textColor: '#1e293b' // Contraste padrão
                         };
                     } else if (item === 'LOCKED') {
-                        // Se é locked, precisamos garantir que o app saiba, 
+                        // Se é locked, precisamos garantir que o app saiba,
                         // mas geralmente o app mescla lockedCells com schedule.
                         // Vamos buscar na trava original para preencher o buraco visualmente se necessário.
                         // (O app front-end usa lockedCells prioritariamente, então podemos deixar vazio ou preencher)
-                        
+
                         // Para garantir consistência visual no retorno:
-                        // O front-end geralmente renderiza o scheduleExport. 
+                        // O front-end geralmente renderiza o scheduleExport.
                         // Vamos preencher com os dados da trava para garantir.
                         const lockKey = \`\${dayName}-\${slotIdx}-\${cls}\`;
                         const lockData = lockedCells[lockKey];
@@ -1827,7 +1827,7 @@ function startGeneration() {
                     }
                 }
             }
-            
+
             self.postMessage({ type: 'SUCCESS', schedule: scheduleExport });
         } else {
             self.postMessage({ type: 'ERROR', message: 'Não foi possível gerar uma grade completa. Conflitos insolúveis detectados.' });
@@ -1843,7 +1843,7 @@ function startGeneration() {
 
         if (type === 'SUCCESS') {
             currentSchedule = schedule;
-            
+
             // Mescla as células travadas de volta para garantir que nada foi perdido visualmente
             // (Embora o worker já deva ter cuidado disso)
             for (let key in lockedCells) {
@@ -2070,7 +2070,7 @@ function updateTeacherReportTable() {
                 const slots = currentSchedule[day][s];
                 for (const [cls, data] of Object.entries(slots)) {
                     if (data && data.teacher === teacherName) {
-                        cellContent = `<div class="text-sm"><span class="font-bold text-indigo-700">${cls}</span><br><span class="text-xs text-slate-500">${data.subject}</span></div>`;
+                        cellContent = `<div class="text-sm"><span class="font-bold text-indigo-700">${escapeHTML(cls)}</span><br><span class="text-xs text-slate-500">${escapeHTML(data.subject)}</span></div>`;
                         found = true;
                         break;
                     }
@@ -2131,7 +2131,7 @@ function updateClassReportTable() {
             if (currentSchedule[day] && currentSchedule[day][s]) {
                 const data = currentSchedule[day][s][className];
                 if (data) {
-                    cellContent = `<div class="text-sm"><span class="font-bold text-slate-800">${data.subject}</span><br><span class="text-xs text-slate-500">${data.teacher}</span></div>`;
+                    cellContent = `<div class="text-sm"><span class="font-bold text-slate-800">${escapeHTML(data.subject)}</span><br><span class="text-xs text-slate-500">${escapeHTML(data.teacher)}</span></div>`;
                 }
             }
             html += `<td class="border p-2 text-center h-16 align-middle">${cellContent}</td>`;
