@@ -197,6 +197,10 @@ function getContrastYIQ(hslStr) {
     return '#1e293b';
 }
 
+function getInitials(name) {
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+}
+
 function getRandomColor() {
     const colors = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e'];
     return colors[Math.floor(Math.random() * colors.length)];
@@ -1872,17 +1876,6 @@ function startGeneration() {
         resourceLimits,
         teacherConstraints
     });
-}
-
-function stopGeneration() {
-    if (scheduleWorker) {
-        scheduleWorker.terminate();
-        scheduleWorker = null;
-    }
-    isGenerating = false;
-    document.getElementById('loadingOverlay').style.display = 'none';
-    document.getElementById('startBtn').classList.remove('hidden');
-    document.getElementById('stopBtn').classList.add('hidden');
 }
 
 function stopGeneration() {
