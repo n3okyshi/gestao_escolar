@@ -729,7 +729,7 @@ function renderTeacherList() {
 
     teacherRegistry.forEach(teacher => {
         let subjectsBadges = teacher.subjects.length > 0
-            ? teacher.subjects.slice(0, 3).map(s => `<span class="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100">${escapeHTML(s)}</span>`).join('')
+            ? teacher.subjects.slice(0, 3).map(s => `<span class="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100">${s}</span>`).join('')
             : '<span class="text-[10px] text-slate-400 italic">Nenhuma disciplina</span>';
 
         if (teacher.subjects.length > 3) subjectsBadges += `<span class="text-[10px] text-slate-400 ml-1">+${teacher.subjects.length - 3}</span>`;
@@ -745,7 +745,7 @@ function renderTeacherList() {
                     ${getInitials(teacher.name)}
                 </div>
                 <div class="overflow-hidden">
-                    <h4 class="font-bold text-slate-800 text-sm truncate">${escapeHTML(teacher.name)}</h4>
+                    <h4 class="font-bold text-slate-800 text-sm truncate">${teacher.name}</h4>
                     <div class="flex flex-wrap gap-1 mt-1">
                         ${subjectsBadges}
                     </div>
@@ -838,7 +838,7 @@ function renderTeacherSubjectMapping(teacherName) {
 
                 <div class="flex items-center gap-2">
                     <div class="w-3 h-3 rounded-full" style="background-color: ${sub.defaultColor}"></div>
-                    <span class="font-bold text-slate-700 text-sm">${escapeHTML(sub.name)}</span>
+                    <span class="font-bold text-slate-700 text-sm">${sub.name}</span>
                 </div>
             </div>
             <span class="text-xs font-medium text-slate-400" id="count_sub_${safeSubId}">
@@ -867,7 +867,7 @@ function renderTeacherSubjectMapping(teacherName) {
                 <input type="checkbox" value="${clsName}"
                     class="cls-check-${safeSubId} w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
                     ${isClassActive ? 'checked' : ''}>
-                <span class="text-xs text-slate-700 font-medium">${escapeHTML(clsName)}</span>
+                <span class="text-xs text-slate-700 font-medium">${clsName}</span>
             `;
             classesArea.appendChild(clsLabel);
         });
@@ -1134,21 +1134,28 @@ function renderSubjectsList() {
         div.className = "flex justify-between items-center bg-white p-2 rounded border border-slate-100 hover:shadow-sm transition group";
 
         const countBadge = sub.defaultCount
-            ? `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded ml-2 border border-slate-200" title="Aulas por semana">${sub.defaultCount} aulas</span>`
+            ? `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded ml-2 border border-slate-200" title="Aulas por semana">${escapeHTML(sub.defaultCount)} aulas</span>`
             : '';
 
         div.innerHTML = `
             <div class="flex items-center gap-2">
-                <div class="w-4 h-4 rounded-full shadow-sm" style="background-color: ${sub.defaultColor}"></div>
+                <div class="w-4 h-4 rounded-full shadow-sm" style="background-color: ${escapeHTML(sub.defaultColor)}"></div>
                 <div class="flex flex-col">
                     <span class="text-sm font-medium text-slate-700 leading-none">${escapeHTML(sub.name)}</span>
                 </div>
                 ${countBadge}
             </div>
-            <button onclick="removeSubject('${sub.id}')" class="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">
+            <button data-subject-id="${escapeHTML(sub.id)}" class="remove-subject-btn text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
             </button>
         `;
+
+        const removeBtn = div.querySelector('.remove-subject-btn');
+        if (removeBtn) {
+            removeBtn.addEventListener('click', function() {
+                removeSubject(sub.id);
+            });
+        }
         container.appendChild(div);
     });
 
@@ -1554,7 +1561,7 @@ function addAlert(type, msg) {
 
     const div = document.createElement('div');
     div.className = `p-3 rounded-lg text-sm border flex items-center gap-2 ${colors[type]}`;
-    div.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4"></i> <span>${escapeHTML(msg)}</span>`;
+    div.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4"></i> <span>${msg}</span>`;
     document.getElementById('alertContainer').appendChild(div);
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
@@ -1567,7 +1574,7 @@ function showToast(msg, type = 'info') {
 
     const el = document.createElement('div');
     el.className = `${colors[type]} text-white px-4 py-3 rounded shadow-lg flex items-center gap-3 transition-all transform translate-x-full`;
-    el.innerHTML = `<span>${escapeHTML(msg)}</span>`;
+    el.innerHTML = `<span>${msg}</span>`;
 
     container.appendChild(el);
 
@@ -1889,17 +1896,6 @@ function stopGeneration() {
     document.getElementById('stopBtn').classList.add('hidden');
 }
 
-function stopGeneration() {
-    if (scheduleWorker) {
-        scheduleWorker.terminate();
-        scheduleWorker = null;
-    }
-    isGenerating = false;
-    document.getElementById('loadingOverlay').style.display = 'none';
-    document.getElementById('startBtn').classList.remove('hidden');
-    document.getElementById('stopBtn').classList.add('hidden');
-}
-
 // =================================================================
 // 13. HISTÓRICO (UNDO)
 // =================================================================
@@ -2070,7 +2066,7 @@ function updateTeacherReportTable() {
                 const slots = currentSchedule[day][s];
                 for (const [cls, data] of Object.entries(slots)) {
                     if (data && data.teacher === teacherName) {
-                        cellContent = `<div class="text-sm"><span class="font-bold text-indigo-700">${escapeHTML(cls)}</span><br><span class="text-xs text-slate-500">${escapeHTML(data.subject)}</span></div>`;
+                        cellContent = `<div class="text-sm"><span class="font-bold text-indigo-700">${cls}</span><br><span class="text-xs text-slate-500">${data.subject}</span></div>`;
                         found = true;
                         break;
                     }
@@ -2131,7 +2127,7 @@ function updateClassReportTable() {
             if (currentSchedule[day] && currentSchedule[day][s]) {
                 const data = currentSchedule[day][s][className];
                 if (data) {
-                    cellContent = `<div class="text-sm"><span class="font-bold text-slate-800">${escapeHTML(data.subject)}</span><br><span class="text-xs text-slate-500">${escapeHTML(data.teacher)}</span></div>`;
+                    cellContent = `<div class="text-sm"><span class="font-bold text-slate-800">${data.subject}</span><br><span class="text-xs text-slate-500">${data.teacher}</span></div>`;
                 }
             }
             html += `<td class="border p-2 text-center h-16 align-middle">${cellContent}</td>`;
