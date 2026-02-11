@@ -536,7 +536,7 @@ function renderMatrixInputs() {
     container.innerHTML = currentMatrix.map((subj, i) => `
         <div class="flex justify-between items-center bg-white p-2 rounded border border-slate-100 mb-1">
             <span class="text-sm text-slate-700 font-medium flex-1">${escapeHTML(subj.name)}</span>
-            <input type="number" value="${subj.count}" min="1" max="10" 
+            <input type="number" value="${subj.count}" min="1" max="10"
                 onchange="currentMatrix[${i}].count = parseInt(this.value); updateSubjectSelect(); saveData();"
                 class="w-14 p-1 border rounded text-center text-xs">
         </div>
@@ -612,7 +612,7 @@ function addAllocation() {
         allocations = allocations.filter(a => !(a.class === cls && a.subject === subjectName));
 
         allocations.push({
-            id: Date.now(),
+            id: Date.now() + Math.random(),
             class: cls,
             subject: subjectName,
             teacher: teacherName,
@@ -634,52 +634,111 @@ function renderAllocations() {
     const list = document.getElementById('allocationsList');
     if (!list) return;
 
+    allocations.sort((a, b) => a.class.localeCompare(b.class) || a.subject.localeCompare(b.subject));
+
     if (!allocations.length) {
         list.innerHTML = `<div class="p-4 text-center text-slate-400 text-sm">Nenhuma aula atribuída.</div>`;
+        updateDashboard();
         return;
     }
 
-    allocations.sort((a, b) => a.class.localeCompare(b.class) || a.subject.localeCompare(b.subject));
+    if (list.firstElementChild && !list.firstElementChild.id && list.firstElementChild.className.includes('text-slate-400')) {
+        list.innerHTML = '';
+    }
 
-    list.innerHTML = allocations.map((a, i) => `
-        <div class="flex items-center justify-between p-3 border-b border-slate-100 hover:bg-slate-50 ${a.active ? '' : 'opacity-50'}">
-            <div class="flex items-center gap-3 overflow-hidden">
-                <input type="checkbox" ${a.active ? 'checked' : ''} onchange="toggleAllocationActive(${i})" class="rounded text-indigo-600">
-                <div class="w-3 h-3 rounded-full flex-shrink-0" style="background:${a.bgColor || a.color || '#ccc'}"></div>
-                <div class="min-w-0">
-                    <div class="text-sm font-bold text-slate-800 truncate">
-                        ${escapeHTML(a.class)} • ${escapeHTML(a.subject)}
-                        ${a.count > 1 ? `<span class="text-xs bg-indigo-100 text-indigo-700 px-1 rounded ml-1">${a.count}x</span>` : ''}
-                    </div>
-                    <div class="text-xs text-slate-500 cursor-pointer hover:text-indigo-600 flex items-center gap-1"
-                        onclick="openAvailabilityModal('${escapeHTML(a.teacher)}')" title="Configurar Folgas">
-                        <i data-lucide="user" class="w-3 h-3"></i> ${escapeHTML(a.teacher)}
+    const existingNodes = new Map();
+    Array.from(list.children).forEach(child => {
+        if (child.dataset.allocId) {
+            existingNodes.set(child.dataset.allocId, child);
+        } else {
+            child.remove();
+        }
+    });
+
+    allocations.forEach(a => {
+        let el = existingNodes.get(String(a.id));
+
+        if (!el) {
+            el = document.createElement('div');
+            el.className = "flex items-center justify-between p-3 border-b border-slate-100 hover:bg-slate-50 transition-all";
+            el.id = `alloc-${a.id}`;
+            el.dataset.allocId = a.id;
+
+            el.innerHTML = `
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <input type="checkbox" class="alloc-check rounded text-indigo-600 transition cursor-pointer">
+                    <div class="alloc-color w-3 h-3 rounded-full flex-shrink-0"></div>
+                    <div class="min-w-0">
+                        <div class="alloc-title text-sm font-bold text-slate-800 truncate"></div>
+                        <div class="alloc-teacher text-xs text-slate-500 cursor-pointer hover:text-indigo-600 flex items-center gap-1" title="Configurar Folgas">
+                            <i data-lucide="user" class="w-3 h-3"></i> <span class="teacher-name"></span>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <button onclick="removeAllocation(${i})" class="text-slate-400 hover:text-red-500 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-        </div>
-    `).join('');
+                <button class="alloc-remove text-slate-400 hover:text-red-500 p-1 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            `;
+
+            el.querySelector('.alloc-check').addEventListener('change', () => toggleAllocationActiveById(a.id));
+            el.querySelector('.alloc-teacher').addEventListener('click', () => openAvailabilityModal(a.teacher));
+            el.querySelector('.alloc-remove').addEventListener('click', () => removeAllocationById(a.id));
+        }
+
+        if (a.active) {
+            el.classList.remove('opacity-50');
+        } else {
+            el.classList.add('opacity-50');
+        }
+
+        const checkbox = el.querySelector('.alloc-check');
+        if (checkbox.checked !== a.active) checkbox.checked = a.active;
+
+        const colorDiv = el.querySelector('.alloc-color');
+        const color = a.bgColor || a.color || '#ccc';
+        if (colorDiv.style.background !== color) colorDiv.style.background = color;
+
+        const titleDiv = el.querySelector('.alloc-title');
+        const countBadge = a.count > 1 ? `<span class="text-xs bg-indigo-100 text-indigo-700 px-1 rounded ml-1">${a.count}x</span>` : '';
+        const newTitleHTML = `${escapeHTML(a.class)} • ${escapeHTML(a.subject)}${countBadge}`;
+        if (titleDiv.innerHTML !== newTitleHTML) titleDiv.innerHTML = newTitleHTML;
+
+        const teacherSpan = el.querySelector('.teacher-name');
+        if (teacherSpan.innerText !== a.teacher) teacherSpan.innerText = a.teacher;
+
+        list.appendChild(el);
+        existingNodes.delete(String(a.id));
+    });
+
+    existingNodes.forEach(node => node.remove());
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
     updateDashboard();
 }
 
-function toggleAllocationActive(i) {
-    if (allocations[i]) {
-        allocations[i].active = !allocations[i].active;
+function toggleAllocationActiveById(id) {
+    const alloc = allocations.find(a => a.id == id);
+    if (alloc) {
+        alloc.active = !alloc.active;
         renderAllocations();
         saveData();
     }
 }
 
-function removeAllocation(i) {
-    if (allocations[i]) {
+function removeAllocationById(id) {
+    const idx = allocations.findIndex(a => a.id == id);
+    if (idx !== -1) {
         recordHistory();
-        allocations.splice(i, 1);
+        allocations.splice(idx, 1);
         renderAllocations();
         saveData();
     }
+}
+
+function toggleAllocationActive(i) {
+    if (allocations[i]) toggleAllocationActiveById(allocations[i].id);
+}
+
+function removeAllocation(i) {
+    if (allocations[i]) removeAllocationById(allocations[i].id);
 }
 
 // =================================================================
@@ -831,11 +890,11 @@ function renderTeacherSubjectMapping(teacherName) {
 
         header.innerHTML = `
             <div class="flex items-center gap-3">
-                <input type="checkbox" id="chk_sub_${safeSubId}" 
+                <input type="checkbox" id="chk_sub_${safeSubId}"
                     class="w-5 h-5 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500 transition"
                     ${isChecked ? 'checked' : ''}
                     onchange="toggleSubjectClassesArea('${safeSubId}', this.checked)">
-                
+
                 <div class="flex items-center gap-2">
                     <div class="w-3 h-3 rounded-full" style="background-color: ${sub.defaultColor}"></div>
                     <span class="font-bold text-slate-700 text-sm">${sub.name}</span>
@@ -852,7 +911,7 @@ function renderTeacherSubjectMapping(teacherName) {
 
         const allBtn = `
             <label class="col-span-3 flex items-center gap-2 mb-2 pb-2 border-b border-slate-200 cursor-pointer">
-                <input type="checkbox" class="w-4 h-4 rounded text-slate-400" 
+                <input type="checkbox" class="w-4 h-4 rounded text-slate-400"
                 onchange="toggleAllClassesForSubject('${safeSubId}', this.checked)">
                 <span class="text-xs font-bold text-slate-500 uppercase">Selecionar Todas as Turmas</span>
             </label>
@@ -864,7 +923,7 @@ function renderTeacherSubjectMapping(teacherName) {
             const clsLabel = document.createElement('label');
             clsLabel.className = "flex items-center gap-2 cursor-pointer hover:bg-white p-1 rounded transition";
             clsLabel.innerHTML = `
-                <input type="checkbox" value="${clsName}" 
+                <input type="checkbox" value="${clsName}"
                     class="cls-check-${safeSubId} w-4 h-4 text-indigo-600 rounded border-slate-300 focus:ring-indigo-500"
                     ${isClassActive ? 'checked' : ''}>
                 <span class="text-xs text-slate-700 font-medium">${clsName}</span>
@@ -1214,8 +1273,8 @@ function renderCurrentSchedule() {
                 const params = `'${day}', ${s}, '${escapeHTML(cls)}'`;
 
                 if (item) {
-                    body += `<td class="border p-1 h-20 align-top relative group" 
-                                ondragover="handleDragOver(event)" 
+                    body += `<td class="border p-1 h-20 align-top relative group"
+                                ondragover="handleDragOver(event)"
                                 ondrop="handleDrop(event, ${params})">
                         <div class="cell-content h-full w-full rounded p-1 flex flex-col justify-center items-center cursor-grab active:cursor-grabbing shadow-sm transition-all hover:scale-[1.02] ${isLocked ? 'ring-2 ring-red-400' : ''}"
                             style="background-color:${item.bgColor}; color:${item.textColor};"
@@ -1396,7 +1455,7 @@ function openResourceModal() {
     list.innerHTML = subjects.map((s, i) => `
         <div class="flex justify-between items-center mb-2 p-2 border-b">
             <span class="text-sm font-medium">${escapeHTML(s.name)}</span>
-            <input type="number" class="border w-16 p-1 rounded text-center" 
+            <input type="number" class="border w-16 p-1 rounded text-center"
                 value="${resourceLimits[s.name] || 99}" min="1" max="50"
                 onchange="resourceLimits['${escapeHTML(s.name)}'] = parseInt(this.value); saveData();">
         </div>
@@ -1591,20 +1650,20 @@ function startGeneration() {
     const activeAllocs = allocations.filter(a => a.active);
     if (!activeAllocs.length) return showToast("Nenhuma aula ativa para gerar.", "error");
     if (!classes.length) return showToast("Não há turmas cadastradas.", "error");
-    
+
     isGenerating = true;
-    
+
     document.getElementById('loadingOverlay').style.display = 'flex';
     document.getElementById('startBtn').classList.add('hidden');
     document.getElementById('stopBtn').classList.remove('hidden');
-    
+
     const loadingText = document.querySelector('#loadingOverlay p.animate-pulse');
     if(loadingText) loadingText.innerText = "Processando grade em alta velocidade...";
 
     const workerScript = `
     self.onmessage = function(e) {
         const { classes, globalDays, globalSlotsPerDay, allocations, lockedCells, resourceLimits, teacherConstraints } = e.data;
-        
+
         const NUM_DAYS = globalDays.length;
         const NUM_SLOTS = globalSlotsPerDay;
         const TOTAL_SLOTS = NUM_DAYS * NUM_SLOTS;
@@ -1616,7 +1675,7 @@ function startGeneration() {
         // Converte alocações grandes ("Matemática 5 aulas") em pequenas atividades ("Matemática Aula 1", "Matemática Aula 2")
         allocations.forEach(alloc => {
             if (!alloc.active) return;
-            
+
             // Prioridade: Aulas duplas e professores com muitas turmas tem prioridade maior
             const priority = (alloc.allowDouble ? 10 : 0) + (alloc.count > 4 ? 5 : 0);
 
@@ -1634,39 +1693,39 @@ function startGeneration() {
             }
         });
 
-        // Ordenação Heurística (MRV simplificado): 
+        // Ordenação Heurística (MRV simplificado):
         // Resolve primeiro quem tem mais restrições/prioridade.
         activities.sort((a, b) => b.priority - a.priority);
 
         // --- 2. ESTRUTURAS DE ESTADO (LOOKUP TABLES RAPIDAS) ---
         // Em vez de percorrer arrays, usamos mapas diretos para O(1) de acesso.
-        
+
         // [slot_index][turma] -> activityID (ou null)
-        let gridClass = new Array(TOTAL_SLOTS).fill(null).map(() => ({})); 
-        
+        let gridClass = new Array(TOTAL_SLOTS).fill(null).map(() => ({}));
+
         // [slot_index][professor] -> true/false
         let gridTeacher = new Array(TOTAL_SLOTS).fill(null).map(() => ({}));
-        
+
         // [dia][turma][materia] -> contador
         let dailySubjectCount = new Array(NUM_DAYS).fill(null).map(() => ({}));
-        
+
         // [slot_index][materia] -> contador (para recursos limitados)
         let resourceUsage = new Array(TOTAL_SLOTS).fill(null).map(() => ({}));
 
         // --- 3. APLICAÇÃO DE TRAVAS (LOCKED CELLS) ---
         // Preenche as tabelas com o que já está fixo
-        
+
         let lockedActivitiesIndices = new Set();
 
         for (let key in lockedCells) {
             const parts = key.split('-'); // DIA-SLOT-TURMA
             if (parts.length < 3) continue;
-            
+
             // Converte DIA-SLOT para índice linear (0 a 24)
             const dayIdx = globalDays.indexOf(parts[0]);
             const slotIdx = parseInt(parts[1]);
             const cls = parts.slice(2).join('-');
-            
+
             if (dayIdx === -1) continue; // Dia inválido (ex: backup antigo)
 
             const linearSlot = (dayIdx * NUM_SLOTS) + slotIdx;
@@ -1675,7 +1734,7 @@ function startGeneration() {
             // Marca ocupação nas tabelas
             gridClass[linearSlot][cls] = 'LOCKED';
             gridTeacher[linearSlot][alloc.teacher] = true;
-            
+
             // Contadores
             if (!dailySubjectCount[dayIdx][cls]) dailySubjectCount[dayIdx][cls] = {};
             dailySubjectCount[dayIdx][cls][alloc.subject] = (dailySubjectCount[dayIdx][cls][alloc.subject] || 0) + 1;
@@ -1685,10 +1744,10 @@ function startGeneration() {
 
             // Remove UMA atividade correspondente da lista de "a fazer"
             // Procura a primeira atividade compatível que ainda não foi travada
-            const actIndex = activities.findIndex((act, idx) => 
+            const actIndex = activities.findIndex((act, idx) =>
                 !lockedActivitiesIndices.has(idx) &&
-                act.class === cls && 
-                act.subject === alloc.subject && 
+                act.class === cls &&
+                act.subject === alloc.subject &&
                 act.teacher === alloc.teacher
             );
 
@@ -1701,7 +1760,7 @@ function startGeneration() {
         let pendingActivities = activities.filter((_, idx) => !lockedActivitiesIndices.has(idx));
 
         // --- 4. ENGINE DE BACKTRACKING (SIMPLIFICADO E RÁPIDO) ---
-        
+
         const MAX_OPS = 5000000; // 5 Milhões de operações (aprox 3-5 segundos)
         let ops = 0;
         let solutionFound = false;
@@ -1723,10 +1782,10 @@ function startGeneration() {
             // Heurística: Tenta slots aleatórios para evitar padrões repetitivos
             // (Em C++ faríamos LCV, em JS o shuffle é mais barato)
             // Otimização: Filtra slots impossíveis antes de loopar? Não, check direto é mais rápido.
-            
+
             // Embaralha slots a cada X iterações para variabilidade, ou usa pré-shuffled
             // Vamos usar uma permutação aleatória local
-            let slotsTried = [...allSlots]; 
+            let slotsTried = [...allSlots];
             // Fisher-Yates shuffle simplificado para performance
             for (let i = slotsTried.length - 1; i > 0; i--) {
                 const j = Math.floor(Math.random() * (i + 1));
@@ -1762,10 +1821,10 @@ function startGeneration() {
                 // --- ALOCA ---
                 gridClass[slot][act.class] = act;
                 gridTeacher[slot][act.teacher] = true;
-                
+
                 if (!dailySubjectCount[day][act.class]) dailySubjectCount[day][act.class] = {};
                 dailySubjectCount[day][act.class][act.subject] = (dailySubjectCount[day][act.class][act.subject] || 0) + 1;
-                
+
                 if (!resourceUsage[slot][act.subject]) resourceUsage[slot][act.subject] = 0;
                 resourceUsage[slot][act.subject]++;
 
@@ -1811,13 +1870,13 @@ function startGeneration() {
                             textColor: '#1e293b' // Contraste padrão
                         };
                     } else if (item === 'LOCKED') {
-                        // Se é locked, precisamos garantir que o app saiba, 
+                        // Se é locked, precisamos garantir que o app saiba,
                         // mas geralmente o app mescla lockedCells com schedule.
                         // Vamos buscar na trava original para preencher o buraco visualmente se necessário.
                         // (O app front-end usa lockedCells prioritariamente, então podemos deixar vazio ou preencher)
-                        
+
                         // Para garantir consistência visual no retorno:
-                        // O front-end geralmente renderiza o scheduleExport. 
+                        // O front-end geralmente renderiza o scheduleExport.
                         // Vamos preencher com os dados da trava para garantir.
                         const lockKey = \`\${dayName}-\${slotIdx}-\${cls}\`;
                         const lockData = lockedCells[lockKey];
@@ -1827,7 +1886,7 @@ function startGeneration() {
                     }
                 }
             }
-            
+
             self.postMessage({ type: 'SUCCESS', schedule: scheduleExport });
         } else {
             self.postMessage({ type: 'ERROR', message: 'Não foi possível gerar uma grade completa. Conflitos insolúveis detectados.' });
@@ -1843,7 +1902,7 @@ function startGeneration() {
 
         if (type === 'SUCCESS') {
             currentSchedule = schedule;
-            
+
             // Mescla as células travadas de volta para garantir que nada foi perdido visualmente
             // (Embora o worker já deva ter cuidado disso)
             for (let key in lockedCells) {
