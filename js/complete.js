@@ -729,7 +729,7 @@ function renderTeacherList() {
 
     teacherRegistry.forEach(teacher => {
         let subjectsBadges = teacher.subjects.length > 0
-            ? teacher.subjects.slice(0, 3).map(s => `<span class="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100">${s}</span>`).join('')
+            ? teacher.subjects.slice(0, 3).map(s => `<span class="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100">${escapeHTML(s)}</span>`).join('')
             : '<span class="text-[10px] text-slate-400 italic">Nenhuma disciplina</span>';
 
         if (teacher.subjects.length > 3) subjectsBadges += `<span class="text-[10px] text-slate-400 ml-1">+${teacher.subjects.length - 3}</span>`;
@@ -745,7 +745,7 @@ function renderTeacherList() {
                     ${getInitials(teacher.name)}
                 </div>
                 <div class="overflow-hidden">
-                    <h4 class="font-bold text-slate-800 text-sm truncate">${teacher.name}</h4>
+                    <h4 class="font-bold text-slate-800 text-sm truncate">${escapeHTML(teacher.name)}</h4>
                     <div class="flex flex-wrap gap-1 mt-1">
                         ${subjectsBadges}
                     </div>
