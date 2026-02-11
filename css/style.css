@@ -1,0 +1,828 @@
+/* =========================================
+   1. VARIÁVEIS E CONFIGURAÇÕES GERAIS
+   ========================================= */
+:root {
+    /* Paleta Primary (Indigo) */
+    --primary-50: #eef2ff;
+    --primary-100: #e0e7ff;
+    --primary-200: #c7d2fe;
+    --primary-300: #a5b4fc;
+    --primary-400: #818cf8;
+    --primary-500: #6366f1;
+    --primary-600: #4f46e5;
+    --primary-700: #4338ca;
+    --primary-800: #3730a3;
+    --primary-900: #312e81;
+
+    /* Superfícies e Textos */
+    --surface-white: #ffffff;
+    --surface-ground: #f8fafc;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+
+    /* Escala de Cinza (Slate) */
+    --gray-50: #f8fafc;
+    --gray-100: #f1f5f9;
+    --gray-200: #e2e8f0;
+    --gray-300: #cbd5e1;
+    --gray-400: #94a3b8;
+    --gray-500: #64748b;
+    --gray-600: #475569;
+    --gray-700: #334155;
+    --gray-800: #1e293b;
+    --gray-900: #0f172a;
+    --white: #ffffff;
+
+    /* Semântica (Status) */
+    --success-bg: #dcfce7;
+    --success-text: #166534;
+    --success-border: #86efac;
+    --warning-bg: #fef9c3;
+    --warning-text: #854d0e;
+    --warning-border: #fde047;
+    --danger-bg: #fee2e2;
+    --danger-text: #991b1b;
+    --danger-border: #fca5a5;
+
+    /* Layout & Tipografia */
+    --sidebar-width: 260px;
+    --header-height: 80px;
+    --font-stack: 'Inter', system-ui, -apple-system, sans-serif;
+
+    /* Espaçamento */
+    --space-1: 0.25rem;
+    --space-2: 0.5rem;
+    --space-3: 0.75rem;
+    --space-4: 1rem;
+    --space-6: 1.5rem;
+    --space-8: 2rem;
+
+    /* Bordas & Sombras */
+    --radius-sm: 0.375rem;
+    --radius-md: 0.5rem;
+    --radius-lg: 0.75rem;
+    --radius-card: 0.75rem;
+    --radius-full: 9999px;
+
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+    /* Animações */
+    --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: 0.2s ease;
+}
+
+*,
+::after,
+::before {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+body {
+    font-family: var(--font-stack);
+    background-color: var(--surface-ground);
+    color: var(--text-main);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Utilitários Flexbox comuns */
+.flex,
+.app-layout,
+.nav-item,
+.sidebar-header,
+.user-profile,
+.kpi-card,
+.stat-card,
+.action-card-btn,
+.items-center {
+    display: flex;
+    align-items: center;
+}
+
+h1,
+h2,
+h3,
+h4 {
+    color: var(--gray-900);
+    margin: 0 0 var(--space-4) 0;
+    font-weight: 700;
+}
+
+/* =========================================
+   2. ESTRUTURA DO LAYOUT (APP SHELL)
+   ========================================= */
+
+.app-layout {
+    flex-direction: row;
+    width: 100vw;
+    height: 100vh;
+}
+
+.app-sidebar,
+aside {
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    max-width: var(--sidebar-width);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 50;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease;
+}
+
+.app-main,
+.main-content {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    background-color: var(--gray-50);
+}
+
+#view-schedule {
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.schedule-wrapper-container {
+    flex: 1;
+    overflow: auto;
+    width: 100%;
+}
+
+/* =========================================
+   3. COMPONENTES DE INTERFACE
+   ========================================= */
+
+/* Inputs & Form Elements */
+input[type=number],
+input[type=text],
+select,
+textarea {
+    width: 100%;
+    padding: 0.6rem var(--space-3);
+    border: 1px solid var(--gray-300);
+    border-radius: var(--radius-md);
+    background-color: var(--white);
+    color: var(--gray-900);
+    font-size: 0.875rem;
+    transition: var(--transition);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: 0;
+    border-color: var(--primary-500);
+    box-shadow: 0 0 0 3px var(--primary-100);
+}
+
+/* Botões */
+button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.6rem var(--space-4);
+    font-size: 0.875rem;
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    border: none;
+    cursor: pointer;
+    gap: var(--space-2);
+    transition: var(--transition);
+}
+
+button:active {
+    transform: translateY(1px);
+}
+
+/* Variantes de Botão */
+button.add-btn,
+button.btn-primary,
+button.generate-btn {
+    background-color: var(--primary-600);
+    color: #fff;
+    box-shadow: var(--shadow-sm);
+}
+
+button.btn-primary:hover,
+button.add-btn:hover,
+button.generate-btn:hover {
+    background-color: var(--primary-700);
+    box-shadow: var(--shadow-md);
+}
+
+button.btn-secondary,
+button.btn-neutral,
+button.print-btn {
+    background-color: var(--white);
+    color: var(--gray-700);
+    border: 1px solid var(--gray-300);
+}
+
+button.btn-secondary:hover {
+    border-color: var(--gray-400);
+    background-color: var(--gray-50);
+}
+
+button.btn-danger,
+button.stop-btn,
+button.remove,
+button.clear-storage {
+    background-color: var(--danger-bg);
+    color: var(--danger-text);
+    border: 1px solid var(--danger-bg);
+}
+
+button.btn-danger:hover {
+    background-color: #fecaca;
+    border-color: var(--danger-border);
+}
+
+.btn-icon {
+    background: transparent;
+    padding: 0;
+    color: inherit;
+}
+
+/* Navegação */
+.nav-item {
+    padding: 0.75rem 1rem;
+    color: #a5b4fc;
+    border-radius: 0.5rem;
+    transition: var(--transition-fast);
+    font-weight: 500;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.nav-item:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: var(--white);
+}
+
+.nav-item.active {
+    background-color: var(--primary-600);
+    color: var(--white);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+}
+
+.nav-item i {
+    margin-right: var(--space-3);
+    width: 20px;
+    height: 20px;
+}
+
+/* Cards e Paineis */
+.panel {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    padding: var(--space-6);
+    border: 1px solid var(--gray-200);
+    margin-bottom: var(--space-6);
+}
+
+.panel h3 {
+    border-bottom: 1px solid var(--gray-100);
+    padding-bottom: var(--space-3);
+    margin-bottom: var(--space-4);
+    font-size: 1.125rem;
+}
+
+.kpi-card,
+.stat-card {
+    background: var(--surface-white);
+    border-radius: var(--radius-card);
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e2e8f0;
+    gap: 1.5rem;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.kpi-card:hover,
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    line-height: 1.2;
+}
+
+.kpi-icon,
+.stat-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.kpi-icon i,
+.stat-icon-wrapper i {
+    width: 24px;
+    height: 24px;
+}
+
+/* Cores de KPI */
+.kpi-blue,
+.icon-box.blue {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+
+.kpi-green,
+.icon-box.green {
+    background: #f0fdf4;
+    color: #22c55e;
+}
+
+.kpi-purple,
+.icon-box.purple {
+    background: #faf5ff;
+    color: #a855f7;
+}
+
+/* Cards de Ação */
+.action-card,
+.action-card-btn {
+    background: var(--surface-white);
+    border: 1px solid #e2e8f0;
+    border-radius: var(--radius-card);
+    padding: 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    transition: var(--transition-fast);
+    cursor: pointer;
+    text-align: left;
+    height: 100%;
+}
+
+.action-card:hover,
+.action-card-btn:hover {
+    border-color: var(--primary-600);
+    background: #f8fafc;
+    box-shadow: var(--shadow-sm);
+}
+
+/* Badges e Avatares */
+.tag {
+    display: inline-flex;
+    align-items: center;
+    background: var(--primary-50);
+    color: var(--primary-700);
+    padding: 0.25rem 0.75rem;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--primary-100);
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.tag span {
+    margin-left: var(--space-2);
+    cursor: pointer;
+    color: var(--primary-500);
+    font-weight: 700;
+}
+
+.tag span:hover {
+    color: var(--danger-text);
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    background-color: var(--primary-500);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    color: var(--white);
+}
+
+.date-badge {
+    background-color: var(--white);
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-full);
+    border: 1px solid var(--gray-200);
+    font-size: 0.875rem;
+    color: var(--gray-500);
+    font-weight: 500;
+}
+
+/* =========================================
+   4. TABELAS E GRADE HORÁRIA
+   ========================================= */
+
+.schedule-container,
+.schedule-wrapper {
+    background: var(--white);
+    border-radius: var(--radius-card);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    margin-top: var(--space-6);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1000px;
+}
+
+#scheduleTable th,
+th {
+    background-color: #f1f5f9;
+    color: var(--gray-600);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.75rem;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 2px solid #e2e8f0;
+    font-weight: 600;
+}
+
+#scheduleTable td,
+td {
+    border: 1px solid #e2e8f0;
+    height: 80px;
+    vertical-align: top;
+    padding: 0;
+}
+
+.cell-content {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.85rem;
+    padding: var(--space-1);
+    cursor: grab;
+    background-color: var(--white);
+    transition: transform 0.1s, filter 0.1s;
+    position: relative;
+}
+
+.cell-content:hover {
+    filter: brightness(0.97);
+}
+
+.cell-content.dragging {
+    opacity: 0.5;
+    background-color: var(--primary-50);
+    border: 2px dashed var(--primary-500);
+}
+
+.locked-cell {
+    border: 2px solid var(--danger-border) !important;
+    background-color: #fff1f2;
+    box-shadow: inset 0 0 10px rgba(239, 68, 68, 0.1);
+}
+
+.lock-icon {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    color: var(--gray-400);
+    opacity: 0;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    padding: 2px;
+    transition: var(--transition);
+}
+
+.cell-content:hover .lock-icon,
+.locked-cell .lock-icon {
+    opacity: 1;
+}
+
+.subject-text {
+    font-weight: 700;
+    color: var(--gray-900);
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+.teacher-text {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    margin-top: 2px;
+}
+
+#allocationsList {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.allocation-item {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--gray-100);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.allocation-item:hover {
+    background-color: var(--gray-50);
+}
+
+.allocation-item:last-child {
+    border-bottom: none;
+}
+
+/* =========================================
+   5. MODAIS, TOASTS E FEEDBACK
+   ========================================= */
+
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(2px);
+    z-index: 50;
+    display: none;
+    place-items: center;
+}
+
+.modal-overlay[style*="display: flex"] {
+    display: flex !important;
+}
+
+.modal-box {
+    background: var(--white);
+    padding: var(--space-6);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 500px;
+    box-shadow: var(--shadow-lg);
+    animation: 0.2s ease-out modalPop;
+}
+
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#toast-container {
+    position: fixed;
+    top: var(--space-6);
+    right: var(--space-6);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.toast {
+    background: var(--white);
+    color: var(--gray-700);
+    padding: var(--space-3) var(--space-4);
+    border-radius: var(--radius-md);
+    border-left: 4px solid var(--gray-500);
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    box-shadow: var(--shadow-lg);
+    animation: 0.3s ease-out slideIn;
+}
+
+.toast.success {
+    border-left-color: var(--success-text);
+}
+
+.toast.error {
+    border-left-color: var(--danger-text);
+}
+
+.toast.info {
+    border-left-color: var(--primary-500);
+}
+
+.empty-state-small {
+    text-align: center;
+    padding: var(--space-6);
+    color: var(--gray-500);
+}
+
+.empty-state-small i {
+    width: 32px;
+    height: 32px;
+    margin-bottom: var(--space-2);
+    color: var(--success-border);
+}
+
+/* =========================================
+   6. ANIMAÇÕES (KEYFRAMES)
+   ========================================= */
+
+@keyframes fadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes modalPop {
+    from {
+        transform: scale(0.95);
+        opacity: 0;
+    }
+
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* =========================================
+   7. MEDIA QUERIES (RESPONSIVO E PRINT)
+   ========================================= */
+
+@media (max-width: 1024px) {
+    .dashboard-panels-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media print {
+
+    /* Esconder Elementos de Interface */
+    .app-sidebar,
+    .no-print,
+    button,
+    #dashboardPanel,
+    .tools-row,
+    #startBtn,
+    #statusMsg,
+    #stopBtn,
+    #undoBtn,
+    #toast-container,
+    .checkbox-wrapper,
+    .resource-btn,
+    .modal-overlay:not(.printing-teacher):not(.printing-class) {
+        display: none !important;
+    }
+
+    /* Layout de Impressão */
+    .app-layout {
+        display: block;
+        height: auto;
+        width: 100%;
+        overflow: visible;
+    }
+
+    .app-main {
+        flex: 1;
+        height: auto;
+        padding: 0;
+        background: white;
+        overflow: visible;
+    }
+
+    .main-content-scroll {
+        padding: 0;
+        overflow: visible !important;
+    }
+
+    .view-section {
+        display: none;
+    }
+
+    #view-schedule {
+        display: block !important;
+        padding: 0;
+    }
+
+    .schedule-wrapper {
+        box-shadow: none;
+        border: none;
+        margin: 0;
+    }
+
+    /* Tabelas de Impressão */
+    table {
+        width: 100%;
+        font-size: 10pt;
+        page-break-inside: auto;
+        border-collapse: collapse;
+    }
+
+    th,
+    td {
+        border: 1px solid #000 !important;
+        color: black !important;
+    }
+
+    .cell-content {
+        border: none;
+    }
+
+    .lock-icon {
+        display: none;
+    }
+
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    /* Modais em Modo Impressão */
+    body.printing-class #classReportModal,
+    body.printing-teacher #teacherReportModal {
+        display: block !important;
+        position: static;
+        width: 100%;
+        height: auto;
+        background: #fff;
+        z-index: 9999;
+    }
+
+    body.printing-class #classReportModal .modal-box,
+    body.printing-teacher #teacherReportModal .modal-box {
+        box-shadow: none;
+        padding: 0;
+        margin: 0;
+        max-width: none;
+        border: none;
+        width: 100%;
+    }
+
+    body.printing-class th {
+        background-color: #ddd !important;
+    }
+
+    #printHeader {
+        display: block !important;
+    }
+
+    @page {
+        size: landscape;
+        margin: 10mm;
+    }
+}
