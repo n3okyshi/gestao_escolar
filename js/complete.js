@@ -1889,17 +1889,6 @@ function stopGeneration() {
     document.getElementById('stopBtn').classList.add('hidden');
 }
 
-function stopGeneration() {
-    if (scheduleWorker) {
-        scheduleWorker.terminate();
-        scheduleWorker = null;
-    }
-    isGenerating = false;
-    document.getElementById('loadingOverlay').style.display = 'none';
-    document.getElementById('startBtn').classList.remove('hidden');
-    document.getElementById('stopBtn').classList.add('hidden');
-}
-
 // =================================================================
 // 13. HISTÓRICO (UNDO)
 // =================================================================
