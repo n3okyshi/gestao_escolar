@@ -833,8 +833,8 @@ function renderTeacherSubjectMapping(teacherName) {
                     onchange="toggleSubjectClassesArea('${safeSubId}', this.checked)">
 
                 <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-full" style="background-color: ${sub.defaultColor}"></div>
-                    <span class="font-bold text-slate-700 text-sm">${sub.name}</span>
+                    <div class="w-3 h-3 rounded-full" style="background-color: ${escapeHTML(sub.defaultColor)}"></div>
+                    <span class="font-bold text-slate-700 text-sm">${escapeHTML(sub.name)}</span>
                 </div>
             </div>
             <span class="text-xs font-medium text-slate-400" id="count_sub_${safeSubId}">
