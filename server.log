@@ -1,0 +1,5 @@
+127.0.0.1 - - [11/Feb/2026 15:00:22] "GET /main.html HTTP/1.1" 200 -
+127.0.0.1 - - [11/Feb/2026 15:00:23] "GET /js/complete.js HTTP/1.1" 200 -
+127.0.0.1 - - [11/Feb/2026 15:00:23] "GET /css/style.css HTTP/1.1" 200 -
+127.0.0.1 - - [11/Feb/2026 15:00:23] "GET /js/utils.js HTTP/1.1" 200 -
+127.0.0.1 - - [11/Feb/2026 15:00:24] "GET /main.html HTTP/1.1" 304 -
