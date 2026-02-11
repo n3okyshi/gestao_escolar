@@ -1079,10 +1079,6 @@ function initSubjectSystem() {
     updateSubjectSelects();
 }
 
-function loadCommonSubjects() {
-    importBNCCSubjects();
-}
-
 function addSubject() {
     const nameInput = document.getElementById('newSubjectName');
     const colorInput = document.getElementById('newSubjectColor');
