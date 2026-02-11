@@ -180,6 +180,13 @@ function handleEnter(e, func) {
     if (e.key === 'Enter') func();
 }
 
+function escapeHTML(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    }[tag]));
+}
+
 function stringToColor(str) {
     let hash = 0;
     for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
@@ -190,10 +197,10 @@ function getContrastYIQ(hslStr) {
     return '#1e293b';
 }
 
-function getRandomColor() {
-    const colors = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e'];
-    return colors[Math.floor(Math.random() * colors.length)];
+function getInitials(name) {
+    return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 }
+
 
 // =================================================================
 // 4. PERSISTÊNCIA (LOAD/SAVE)
@@ -1123,21 +1130,28 @@ function renderSubjectsList() {
         div.className = "flex justify-between items-center bg-white p-2 rounded border border-slate-100 hover:shadow-sm transition group";
 
         const countBadge = sub.defaultCount
-            ? `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded ml-2 border border-slate-200" title="Aulas por semana">${sub.defaultCount} aulas</span>`
+            ? `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded ml-2 border border-slate-200" title="Aulas por semana">${escapeHTML(sub.defaultCount)} aulas</span>`
             : '';
 
         div.innerHTML = `
             <div class="flex items-center gap-2">
-                <div class="w-4 h-4 rounded-full shadow-sm" style="background-color: ${sub.defaultColor}"></div>
+                <div class="w-4 h-4 rounded-full shadow-sm" style="background-color: ${escapeHTML(sub.defaultColor)}"></div>
                 <div class="flex flex-col">
-                    <span class="text-sm font-medium text-slate-700 leading-none">${sub.name}</span>
+                    <span class="text-sm font-medium text-slate-700 leading-none">${escapeHTML(sub.name)}</span>
                 </div>
                 ${countBadge}
             </div>
-            <button onclick="removeSubject('${sub.id}')" class="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">
+            <button data-subject-id="${escapeHTML(sub.id)}" class="remove-subject-btn text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
             </button>
         `;
+
+        const removeBtn = div.querySelector('.remove-subject-btn');
+        if (removeBtn) {
+            removeBtn.addEventListener('click', function() {
+                removeSubject(sub.id);
+            });
+        }
         container.appendChild(div);
     });
 

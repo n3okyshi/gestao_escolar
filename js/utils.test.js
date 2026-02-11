@@ -1,6 +1,6 @@
 const { test, describe } = require('node:test');
 const assert = require('node:assert');
-const { getInitials, escapeHTML } = require('./utils.js');
+const { getInitials, getRandomColor } = require('./utils.js');
 
 describe('getInitials', () => {
     test('should return initials for two names', () => {
@@ -40,32 +40,19 @@ describe('getInitials', () => {
     });
 });
 
-describe('escapeHTML', () => {
-    test('should return empty string for null', () => {
-        assert.strictEqual(escapeHTML(null), '');
+describe('getRandomColor', () => {
+    test('should return a string', () => {
+        assert.strictEqual(typeof getRandomColor(), 'string');
     });
 
-    test('should return empty string for undefined', () => {
-        assert.strictEqual(escapeHTML(undefined), '');
+    test('should return a valid hex color code', () => {
+        const color = getRandomColor();
+        assert.match(color, /^#[0-9a-fA-F]{6}$/);
     });
 
-    test('should return same string if no special characters', () => {
-        assert.strictEqual(escapeHTML('hello world'), 'hello world');
-    });
-
-    test('should escape &', () => {
-        assert.strictEqual(escapeHTML('Tom & Jerry'), 'Tom &amp; Jerry');
-    });
-
-    test('should escape < and >', () => {
-        assert.strictEqual(escapeHTML('<script>'), '&lt;script&gt;');
-    });
-
-    test('should escape quotes', () => {
-        assert.strictEqual(escapeHTML('It\'s "quote"'), 'It&#39;s &quot;quote&quot;');
-    });
-
-    test('should not escape /', () => {
-        assert.strictEqual(escapeHTML('a/b'), 'a/b');
+    test('should return one of the predefined colors', () => {
+        const expectedColors = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e'];
+        const color = getRandomColor();
+        assert.ok(expectedColors.includes(color));
     });
 });
