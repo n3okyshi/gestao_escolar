@@ -151,6 +151,12 @@ function applyPrintSettings() {
     }
 }
 
+let saveTimeout = null;
+function saveDataDebounced() {
+    if (saveTimeout) clearTimeout(saveTimeout);
+    saveTimeout = setTimeout(saveData, 500);
+}
+
 function toggleLock(dayName, slotIndex, schoolClass, event) {
     if (event) event.stopPropagation();
     recordHistory();
