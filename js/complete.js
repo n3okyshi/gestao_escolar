@@ -837,8 +837,8 @@ function renderTeacherSubjectMapping(teacherName) {
                     onchange="toggleSubjectClassesArea('${safeSubId}', this.checked)">
                 
                 <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-full" style="background-color: ${sub.defaultColor}"></div>
-                    <span class="font-bold text-slate-700 text-sm">${sub.name}</span>
+                    <div class="w-3 h-3 rounded-full" style="background-color: ${escapeHTML(sub.defaultColor)}"></div>
+                    <span class="font-bold text-slate-700 text-sm">${escapeHTML(sub.name)}</span>
                 </div>
             </div>
             <span class="text-xs font-medium text-slate-400" id="count_sub_${safeSubId}">
@@ -1139,9 +1139,9 @@ function renderSubjectsList() {
 
         div.innerHTML = `
             <div class="flex items-center gap-2">
-                <div class="w-4 h-4 rounded-full shadow-sm" style="background-color: ${sub.defaultColor}"></div>
+                <div class="w-4 h-4 rounded-full shadow-sm" style="background-color: ${escapeHTML(sub.defaultColor)}"></div>
                 <div class="flex flex-col">
-                    <span class="text-sm font-medium text-slate-700 leading-none">${sub.name}</span>
+                    <span class="text-sm font-medium text-slate-700 leading-none">${escapeHTML(sub.name)}</span>
                 </div>
                 ${countBadge}
             </div>
