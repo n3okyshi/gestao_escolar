@@ -95,7 +95,6 @@ export const turmaController = {
         const id = document.getElementById('input-id-turma')?.value;
 
         if (nivel && serie && id) {
-            // Cria um nome amigável composto, ex: "6º Ano A"
             model.addTurma(`${serie} ${id}`, nivel, serie, id);
 
             window.controller.closeModal();
@@ -137,7 +136,6 @@ export const turmaController = {
                 <button onclick="turmaController.saveAluno('${window.escapeHTML(turmaId)}')" class="btn-primary w-full py-3 rounded-xl font-bold">Salvar</button>
             </div>
         `);
-        // Foco automático para agilidade
         setTimeout(() => document.getElementById('input-aluno-nome')?.focus(), 100);
     },
 
@@ -163,34 +161,28 @@ export const turmaController = {
      * @param {string} alunoId 
      */
     deleteAluno(turmaId, alunoId) {
-        // Busca dados para backup antes de excluir
         const turma = model.state.turmas.find(t => String(t.id) === String(turmaId));
         const aluno = turma ? turma.alunos.find(a => String(a.id) === String(alunoId)) : null;
 
         if (!aluno) return;
 
-        // Executa a exclusão
         model.deleteAluno(turmaId, alunoId);
         this._refreshTurmaView(turmaId);
 
-        // Toast com lógica de Restauração
         Toast.show(`Aluno removido.`, 'info', 5000, {
             label: 'DESFAZER',
             callback: () => {
                 const t = model.state.turmas.find(t => String(t.id) === String(turmaId));
                 if (t) {
-                    // Reinsere o objeto exato (preservando ID e notas)
                     t.alunos.push(aluno);
                     t.alunos.sort((a, b) => a.nome.localeCompare(b.nome));
 
                     model.saveLocal();
 
-                    // Sincroniza restauração se logado
                     if (model.currentUser && firebaseService.saveAluno) {
                         firebaseService.saveAluno(model.currentUser.uid, turmaId, aluno);
                     }
 
-                    // Atualiza tela
                     window.turmaController._refreshTurmaView(turmaId);
                     Toast.show('Aluno restaurado!', 'success');
                 }
@@ -244,7 +236,6 @@ export const turmaController = {
      * @param {string} turmaId 
      */
     openAddAvaliacao(turmaId) {
-        // Determina tipo de período (Bimestre/Trimestre) baseado na config ou padrão
         const tipoPeriodo = model.state.userConfig?.periodType || 'bimestre';
         const qtdPeriodos = tipoPeriodo === 'trimestre' ? 3 : 4;
 
@@ -329,23 +320,19 @@ export const turmaController = {
      * @param {string} turmaId 
      */
     _refreshTurmaView(turmaId) {
-        // Verifica se a view de turmas está acessível globalmente
         if (window.controller.currentView === 'turmas' && window.turmasView && window.turmasView.renderDetalhesTurma) {
             window.turmasView.renderDetalhesTurma(document.getElementById('view-container'), turmaId);
         } else {
             window.controller.navigate('turmas');
         }
     },
-    // Em planner_core/js/controllers/turmaController.js
 
     importarTurmasDoGestor: function () {
-        // 1. Verifica se existem turmas no sistema principal
         if (!window.gestorClasses || window.gestorClasses.length === 0) {
             alert("Não há turmas cadastradas no Gestor Escolar principal.");
             return;
         }
 
-        // 2. Cria o HTML do Modal de Seleção
         const listaHtml = window.gestorClasses.map(nomeTurma => `
         <label class="flex items-center gap-3 p-3 border rounded-lg hover:bg-slate-50 cursor-pointer">
             <input type="checkbox" value="${nomeTurma}" class="turma-import-check w-5 h-5 text-indigo-600 rounded">
@@ -366,21 +353,19 @@ export const turmaController = {
         </div>
     `;
 
-        // 3. Define a função de confirmação globalmente (para o botão onclick funcionar)
         window.confirmarImportacaoTurmas = () => {
             const checkboxes = document.querySelectorAll('.turma-import-check:checked');
             let importadas = 0;
 
             checkboxes.forEach(chk => {
                 const nome = chk.value;
-                // Verifica se já existe para não duplicar
                 const jaExiste = model.state.turmas.some(t => t.nome === nome);
 
                 if (!jaExiste) {
                     const novaTurma = {
                         id: Date.now() + Math.random().toString(36).substr(2, 5),
                         nome: nome,
-                        serie: nome.replace(/[^0-9]/g, '') + 'º Ano', // Tenta adivinhar a série
+                        serie: nome.replace(/[^0-9]/g, '') + 'º Ano',
                         alunos: []
                     };
                     model.addTurma(novaTurma);
@@ -391,24 +376,20 @@ export const turmaController = {
             model.saveLocal();
             window.plannerController.closeModal();
 
-            // Atualiza a tela se estiver na view de turmas
             if (window.plannerController.currentView === 'turmas') {
                 window.plannerController.navigate('turmas');
             }
 
-            // Usa o Toast do Planner se disponível, ou alert padrão
             if (window.Toast) window.Toast.show(`${importadas} turmas importadas com sucesso!`, "success");
             else alert(`${importadas} turmas importadas!`);
         };
 
-        // 4. Abre o modal usando o sistema de UI do Planner
         window.plannerController.openModal("Importar do Gestor", modalContent);
     },
 };
 
 
 
-// Exposição global para chamadas via HTML (onclick)
 if (typeof window !== 'undefined') {
     window.turmaController = turmaController;
 }
