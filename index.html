@@ -3,7 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; font-src 'self' https://fonts.gstatic.com; worker-src 'self' blob:; connect-src 'self';">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob:; font-src 'self' https://fonts.gstatic.com; worker-src 'self' blob:; connect-src 'self' https://unpkg.com;">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Gestão Escolar</title>
     <link rel="icon"
@@ -13,6 +14,13 @@
     <script src="https://unpkg.com/lucide@latest"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="css/style.css" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+    <link href="planner_core/css/final.css" rel="stylesheet">
 
     <script>
         tailwind.config = {
@@ -25,6 +33,7 @@
             }
         }
     </script>
+
 </head>
 
 <body class="bg-slate-50 text-slate-800 font-['Inter'] antialiased">
@@ -114,26 +123,90 @@
                         <i data-lucide="chevron-right"
                             class="w-4 h-4 text-indigo-400 transition-transform duration-200 group-teacher-icon"></i>
                     </button>
-                    <div id="group-teacher" class="mt-1 space-y-1 overflow-hidden transition-all duration-300 max-h-0">
-                        <ul>
-                            <li><button><i data-lucide="clipboard-list" class="w-4 h-4 opacity-75"></i><span>Planner
-                                        Pessoal</span></button></li>
-                            <li><button><i data-lucide="calendar"
-                                        class="w-4 h-4 opacity-75"></i><span>Calendário</span></button></li>
-                            <li><button><i data-lucide="check-square"
-                                        class="w-4 h-4 opacity-75"></i><span>Tarefas</span></button></li>
-                            <li><button><i data-lucide="sticky-note"
-                                        class="w-4 h-4 opacity-75"></i><span>Anotações</span></button></li>
-                            <li><button><i data-lucide="package"
-                                        class="w-4 h-4 opacity-75"></i><span>Recursos</span></button></li>
-                            <li><button><i data-lucide="layout-grid"
-                                        class="w-4 h-4 opacity-75"></i><span>Mapeamento</span></button></li>
-                            <li><button><i data-lucide="file-question"
-                                        class="w-4 h-4 opacity-75"></i><span>Provas</span></button></li>
-                            <li><button><i data-lucide="book" class="w-4 h-4 opacity-75"></i><span>Consulta
-                                        BNCC</span></button></li>
-                        </ul>
-                    </div>
+                    <ul>
+                        <li>
+                            <button onclick="openPlannerModule('dashboard')">
+                                <i data-lucide="layout-dashboard" class="w-4 h-4 opacity-75"></i>
+                                <span>Visão Geral</span>
+                            </button>
+                        </li>
+
+                        <li>
+                            <button onclick="openPlannerModule('periodo')">
+                                <i data-lucide="layers" class="w-4 h-4 opacity-75"></i>
+                                <span>Por Período</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button onclick="openPlannerModule('mensal')">
+                                <i data-lucide="calendar-range" class="w-4 h-4 opacity-75"></i>
+                                <span>Mensal</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button onclick="openPlannerModule('dia')">
+                                <i data-lucide="file-edit" class="w-4 h-4 opacity-75"></i>
+                                <span>Diário de Aula</span>
+                            </button>
+                        </li>
+
+                        <li>
+                            <button onclick="openPlannerModule('frequencia')">
+                                <i data-lucide="check-square" class="w-4 h-4 opacity-75"></i>
+                                <span>Frequência</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button onclick="openPlannerModule('turmas')">
+                                <i data-lucide="users" class="w-4 h-4 opacity-75"></i>
+                                <span>Minhas Turmas</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button onclick="openPlannerModule('notas-anuais')">
+                                <i data-lucide="award" class="w-4 h-4 opacity-75"></i>
+                                <span>Notas e Médias</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button onclick="openPlannerModule('horario')">
+                                <i data-lucide="clock" class="w-4 h-4 opacity-75"></i>
+                                <span>Minha Grade</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button onclick="openPlannerModule('mapa')">
+                                <i data-lucide="layout-grid" class="w-4 h-4 opacity-75"></i>
+                                <span>Mapa de Sala</span>
+                            </button>
+                        </li>
+
+                        <li>
+                            <button onclick="openPlannerModule('bncc')">
+                                <i data-lucide="book-open" class="w-4 h-4 opacity-75"></i>
+                                <span>Consulta BNCC</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button onclick="openPlannerModule('provas')">
+                                <i data-lucide="file-question" class="w-4 h-4 opacity-75"></i>
+                                <span>Gerador de Provas</span>
+                            </button>
+                        </li>
+                        <li>
+                            <button onclick="openPlannerModule('comunidade')">
+                                <i data-lucide="globe" class="w-4 h-4 opacity-75"></i>
+                                <span>Comunidade</span>
+                            </button>
+                        </li>
+
+                        <li>
+                            <button onclick="openPlannerModule('config')">
+                                <i data-lucide="settings-2" class="w-4 h-4 opacity-75"></i>
+                                <span>Ajustes Planner</span>
+                            </button>
+                        </li>
+                    </ul>
                 </div>
             </nav>
 
@@ -153,6 +226,10 @@
         </aside>
 
         <main class="app-main flex-1 h-full flex flex-col bg-slate-50 relative overflow-hidden">
+
+            <div id="view-planner-wrapper" class="view-section h-full flex flex-col hidden bg-slate-50 overflow-y-auto">
+                <div id="view-container" class="w-full max-w-7xl mx-auto p-4 md:p-8"></div>
+            </div>
 
             <div id="view-dashboard" class="view-section active h-full overflow-y-auto p-8">
                 <header class="mb-8 flex justify-between items-end">
@@ -599,6 +676,15 @@
                         type="text" id="modalTeacherInput"
                         class="w-full p-2.5 border border-slate-300 rounded-lg outline-none focus:border-primary-500">
                 </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Cor da Combinação</label>
+                    <div class="flex gap-2 items-center">
+                        <input type="color" id="modalColorInput"
+                            class="h-10 w-20 cursor-pointer rounded border border-slate-300 p-1">
+                        <span class="text-xs text-slate-400">Isso alterará a cor de todas as aulas deste
+                            professor/matéria.</span>
+                    </div>
+                </div>
             </div>
             <div class="px-6 py-4 bg-slate-50 border-t flex justify-between">
                 <button onclick="clearManualCell()" class="text-red-600 text-sm font-bold hover:underline">Limpar
@@ -789,8 +875,17 @@
         </div>
     </div>
 
-    <script src="js/utils.js"></script>
     <script src="js/complete.js"></script>
+
+    <script type="module">
+        import { controller } from './planner_core/js/controller.js';
+
+        window.plannerController = controller;
+
+        window.addEventListener('load', () => {
+            if (controller.init) controller.init();
+        });
+    </script>
 
 </body>
 

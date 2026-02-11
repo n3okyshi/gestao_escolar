@@ -124,6 +124,25 @@ window.onload = function () {
             icon.classList.add('rotate-90');
             icon.style.transform = 'rotate(90deg)';
         }
+
+        const planner = document.getElementById('view-planner-wrapper');
+        if (planner) {
+            planner.classList.add('hidden');
+            planner.classList.remove('active');
+        }
+
+        document.querySelectorAll('.view-section').forEach(el => {
+            el.classList.add('hidden');
+            el.classList.remove('active');
+        });
+
+        const dash = document.getElementById('view-dashboard');
+        if (dash) {
+            dash.classList.remove('hidden');
+            dash.classList.add('active');
+        }
+
+        updateDashboard();
     }
 
     updateDashboard();
@@ -209,7 +228,8 @@ function saveData() {
         printSettings,
         slotsPerDay: slotsVal,
         schoolLevel: levelVal,
-        version: '2.1'
+        version: '2.1',
+        currentSchedule: currentSchedule // <--- NOVO: Salva a grade atual completa
     };
 
     try {
@@ -246,7 +266,17 @@ function loadData() {
             if (data.schoolLevel && document.getElementById('schoolLevel'))
                 document.getElementById('schoolLevel').value = data.schoolLevel;
 
-            initEmptySchedule();
+            if (data.currentSchedule) {
+                const input = document.getElementById('slotsPerDay');
+                globalSlotsPerDay = input ? (parseInt(input.value) || 5) : 5;
+
+                currentSchedule = data.currentSchedule;
+            } else {
+                initEmptySchedule();
+            }
+            // --------------------------------------------------
+
+            updateCurriculumMatrix();
             updateCurriculumMatrix();
             renderClasses();
             renderAllocations();
@@ -301,34 +331,82 @@ function resetAllData() {
 
 function exportData() {
     saveData();
-    const dataStr = localStorage.getItem('gestorEscolarV21');
-    if (!dataStr) return;
+    saveTeacherData();
+    saveSubjectData();
 
+    const fullBackup = {
+        meta: {
+            version: '3.0',
+            type: 'FULL_BACKUP',
+            date: new Date().toISOString()
+        },
+        mainData: JSON.parse(localStorage.getItem('gestorEscolarV21') || '{}'),
+
+        teacherRegistry: JSON.parse(localStorage.getItem('teacherRegistry') || '[]'),
+        subjectsRegistry: JSON.parse(localStorage.getItem('subjectsRegistry') || '[]'),
+
+        teacherConstraints: JSON.parse(localStorage.getItem('teacherConstraints') || '{}'),
+        resourceLimits: JSON.parse(localStorage.getItem('resourceLimits') || '{}')
+    };
+
+    const dataStr = JSON.stringify(fullBackup, null, 2);
     const blob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
+
     const a = document.createElement('a');
     a.href = url;
-    a.download = `backup_escolar_${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `escola_backup_completo_${new Date().toISOString().slice(0, 10)}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+
+    showToast("Backup completo gerado com sucesso!", "success");
 }
 
 function importData(input) {
     const file = input.files[0];
     if (!file) return;
+
     const reader = new FileReader();
     reader.onload = function (e) {
         try {
-            JSON.parse(e.target.result);
-            localStorage.setItem('gestorEscolarV21', e.target.result);
-            showToast("Backup restaurado!", "success");
-            setTimeout(() => location.reload(), 1000);
+            const jsonContent = JSON.parse(e.target.result);
+
+            if (!jsonContent) throw new Error("Arquivo vazio ou inválido");
+
+            if (jsonContent.meta && jsonContent.meta.type === 'FULL_BACKUP') {
+                if (jsonContent.mainData)
+                    localStorage.setItem('gestorEscolarV21', JSON.stringify(jsonContent.mainData));
+
+                if (jsonContent.teacherRegistry)
+                    localStorage.setItem('teacherRegistry', JSON.stringify(jsonContent.teacherRegistry));
+
+                if (jsonContent.subjectsRegistry)
+                    localStorage.setItem('subjectsRegistry', JSON.stringify(jsonContent.subjectsRegistry));
+
+                if (jsonContent.teacherConstraints)
+                    localStorage.setItem('teacherConstraints', JSON.stringify(jsonContent.teacherConstraints));
+
+                if (jsonContent.resourceLimits)
+                    localStorage.setItem('resourceLimits', JSON.stringify(jsonContent.resourceLimits));
+
+                showToast("Sistema completo restaurado!", "success");
+
+            } else {
+                localStorage.setItem('gestorEscolarV21', JSON.stringify(jsonContent));
+
+                showToast("Backup simples restaurado (Professores podem não estar inclusos).", "warning");
+            }
+
+            setTimeout(() => location.reload(), 1500);
+
         } catch (err) {
-            showToast("Arquivo inválido.", "error");
+            console.error(err);
+            showToast("Erro: Arquivo inválido ou corrompido.", "error");
         }
     };
     reader.readAsText(file);
+    input.value = '';
 }
 
 // =================================================================
@@ -336,9 +414,18 @@ function importData(input) {
 // =================================================================
 
 function navigateTo(viewId) {
+    const plannerWrapper = document.getElementById('view-planner-wrapper');
+    if (plannerWrapper) {
+        plannerWrapper.classList.add('hidden');
+        plannerWrapper.classList.remove('active');
+    }
+
     document.querySelectorAll('.view-section').forEach(el => {
-        el.classList.remove('active');
-        el.style.display = 'none';
+        if (el.id !== 'view-planner-wrapper') {
+            el.classList.remove('active');
+            el.classList.add('hidden');
+            el.style.display = 'none';
+        }
     });
 
     document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('bg-white/10', 'text-white'));
@@ -346,6 +433,7 @@ function navigateTo(viewId) {
     const target = document.getElementById('view-' + viewId);
     if (target) {
         target.classList.add('active');
+        target.classList.remove('hidden');
         target.style.display = 'block';
 
         if (viewId === 'schedule') renderCurrentSchedule();
@@ -1231,7 +1319,7 @@ function renderSubjectsList() {
 
         const removeBtn = div.querySelector('.remove-subject-btn');
         if (removeBtn) {
-            removeBtn.addEventListener('click', function() {
+            removeBtn.addEventListener('click', function () {
                 removeSubject(sub.id);
             });
         }
@@ -1376,9 +1464,12 @@ function openManualModal(day, slot, cls) {
     const cur = currentSchedule[day]?.[slot]?.[cls];
     const sSel = document.getElementById('modalSubjectSelect');
     const tInp = document.getElementById('modalTeacherInput');
+    const cInp = document.getElementById('modalColorInput');
 
     if (sSel) sSel.value = cur ? cur.subject : "";
     if (tInp) tInp.value = cur ? cur.teacher : "";
+
+    if (cInp) cInp.value = cur ? cur.bgColor : "#e2e8f0";
 
     document.getElementById('manualModal').style.display = 'flex';
 }
@@ -1390,11 +1481,13 @@ function closeModal() {
 function saveManualAllocation() {
     const subj = document.getElementById('modalSubjectSelect').value;
     const teach = document.getElementById('modalTeacherInput').value;
+    const newColor = document.getElementById('modalColorInput').value;
 
     if (!subj || !teach) return showToast("Preencha todos os campos.", "error");
 
     recordHistory();
-    const colorKey = subj + teach;
+
+    const newTextColor = getContrastYIQ(newColor);
 
     const item = {
         id: 'MANUAL_' + Date.now(),
@@ -1403,17 +1496,43 @@ function saveManualAllocation() {
         teacher: teach,
         count: 1,
         active: true,
-        bgColor: stringToColor(colorKey),
-        textColor: getContrastYIQ(stringToColor(colorKey))
+        bgColor: newColor,
+        textColor: newTextColor
     };
 
     currentSchedule[modalTarget.day][modalTarget.slot][modalTarget.cls] = item;
+
     lockedCells[`${modalTarget.day}-${modalTarget.slot}-${modalTarget.cls}`] = item;
+
+    allocations.forEach(alloc => {
+        if (alloc.subject === subj && alloc.teacher === teach) {
+            alloc.bgColor = newColor;
+            alloc.textColor = newTextColor;
+        }
+    });
+
+    globalDays.forEach(day => {
+        for (let s = 0; s < globalSlotsPerDay; s++) {
+            classes.forEach(c => {
+                const cell = currentSchedule[day][s][c];
+                if (cell && cell.subject === subj && cell.teacher === teach) {
+                    cell.bgColor = newColor;
+                    cell.textColor = newTextColor;
+
+                    const lockKey = `${day}-${s}-${c}`;
+                    if (lockedCells[lockKey]) {
+                        lockedCells[lockKey].bgColor = newColor;
+                        lockedCells[lockKey].textColor = newTextColor;
+                    }
+                }
+            });
+        }
+    });
 
     renderCurrentSchedule();
     saveData();
     closeModal();
-    showToast("Aula salva e fixada.", "success");
+    showToast("Cor da combinação atualizada!", "success");
 }
 
 function clearManualCell() {
@@ -1685,7 +1804,7 @@ function startGeneration() {
     document.getElementById('stopBtn').classList.remove('hidden');
 
     const loadingText = document.querySelector('#loadingOverlay p.animate-pulse');
-    if(loadingText) loadingText.innerText = "Processando grade em alta velocidade...";
+    if (loadingText) loadingText.innerText = "Processando grade em alta velocidade...";
 
     const workerScript = `
     self.onmessage = function(e) {
@@ -1924,7 +2043,7 @@ function startGeneration() {
     const blob = new Blob([workerScript], { type: 'application/javascript' });
     scheduleWorker = new Worker(URL.createObjectURL(blob));
 
-    scheduleWorker.onmessage = function(e) {
+    scheduleWorker.onmessage = function (e) {
         const { type, message, schedule } = e.data;
 
         if (type === 'SUCCESS') {
@@ -1934,7 +2053,7 @@ function startGeneration() {
             // (Embora o worker já deva ter cuidado disso)
             for (let key in lockedCells) {
                 const parts = key.split('-');
-                if(parts.length >= 3) {
+                if (parts.length >= 3) {
                     const d = parts[0], s = parseInt(parts[1]), c = parts.slice(2).join('-');
                     if (currentSchedule[d] && currentSchedule[d][s]) {
                         currentSchedule[d][s][c] = lockedCells[key];
@@ -2260,3 +2379,45 @@ function getRandomColor() {
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = { getInitials, getRandomColor };
 }
+
+function openPlannerModule(viewName) {
+    document.querySelectorAll('.view-section').forEach(el => {
+        el.classList.remove('active');
+        el.classList.add('hidden');
+    });
+
+    const plannerWrapper = document.getElementById('view-planner-wrapper');
+    plannerWrapper.classList.remove('hidden');
+    plannerWrapper.classList.add('active');
+
+    if (window.plannerController) {
+        window.plannerController.navigate(viewName);
+    } else {
+        console.error("O módulo do Planner ainda não foi carregado.");
+    }
+}
+
+window.openPlannerModule = function (viewName) {
+    document.querySelectorAll('.view-section').forEach(el => {
+        el.classList.remove('active');
+        el.classList.add('hidden');
+        el.style.display = 'none';
+    });
+
+    const plannerWrapper = document.getElementById('view-planner-wrapper');
+    if (plannerWrapper) {
+        plannerWrapper.classList.remove('hidden');
+        plannerWrapper.classList.add('active');
+        plannerWrapper.style.display = 'flex';
+    }
+
+    if (window.plannerController) {
+        setTimeout(() => {
+            window.plannerController.navigate(viewName);
+        }, 10);
+    } else {
+        console.error("Módulo do Planner ainda não carregou.");
+    }
+}
+
+window.gestorClasses = classes; 

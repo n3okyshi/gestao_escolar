@@ -155,8 +155,7 @@ aside {
 
 #view-schedule {
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    
 }
 
 .schedule-wrapper-container {
