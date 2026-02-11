@@ -1,6 +1,6 @@
 const { test, describe } = require('node:test');
 const assert = require('node:assert');
-const { getInitials } = require('./utils.js');
+const { getInitials, escapeHTML } = require('./utils.js');
 
 describe('getInitials', () => {
     test('should return initials for two names', () => {
@@ -37,5 +37,35 @@ describe('getInitials', () => {
 
     test('should handle accented characters correctly', () => {
         assert.strictEqual(getInitials('Álvaro Antunes'), 'ÁA');
+    });
+});
+
+describe('escapeHTML', () => {
+    test('should return empty string for null', () => {
+        assert.strictEqual(escapeHTML(null), '');
+    });
+
+    test('should return empty string for undefined', () => {
+        assert.strictEqual(escapeHTML(undefined), '');
+    });
+
+    test('should return same string if no special characters', () => {
+        assert.strictEqual(escapeHTML('hello world'), 'hello world');
+    });
+
+    test('should escape &', () => {
+        assert.strictEqual(escapeHTML('Tom & Jerry'), 'Tom &amp; Jerry');
+    });
+
+    test('should escape < and >', () => {
+        assert.strictEqual(escapeHTML('<script>'), '&lt;script&gt;');
+    });
+
+    test('should escape quotes', () => {
+        assert.strictEqual(escapeHTML('It\'s "quote"'), 'It&#39;s &quot;quote&quot;');
+    });
+
+    test('should not escape /', () => {
+        assert.strictEqual(escapeHTML('a/b'), 'a/b');
     });
 });
