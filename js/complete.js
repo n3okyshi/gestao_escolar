@@ -634,54 +634,147 @@ function renderAllocations() {
     const list = document.getElementById('allocationsList');
     if (!list) return;
 
+    // Ensure all allocations have IDs (migration for existing data)
+    let needsSave = false;
+    allocations.forEach(a => {
+        if (!a.id) {
+            a.id = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            needsSave = true;
+        }
+    });
+    if (needsSave) saveData();
+
+    if (!list.dataset.hasListeners) {
+        list.addEventListener('click', (e) => {
+            const toggleBtn = e.target.closest('.alloc-toggle-btn');
+            if (toggleBtn) {
+                const item = toggleBtn.closest('.alloc-item');
+                if (item) toggleAllocationActiveById(item.dataset.allocId);
+                return;
+            }
+
+            const removeBtn = e.target.closest('.alloc-remove-btn');
+            if (removeBtn) {
+                const item = removeBtn.closest('.alloc-item');
+                if (item) removeAllocationById(item.dataset.allocId);
+                return;
+            }
+
+            const teacherBtn = e.target.closest('.alloc-teacher-btn');
+            if (teacherBtn) {
+                openAvailabilityModal(teacherBtn.dataset.teacherName);
+            }
+        });
+        list.dataset.hasListeners = 'true';
+    }
+
+    allocations.sort((a, b) => a.class.localeCompare(b.class) || a.subject.localeCompare(b.subject));
+
     if (!allocations.length) {
         list.innerHTML = `<div class="p-4 text-center text-slate-400 text-sm">Nenhuma aula atribuída.</div>`;
         return;
     }
 
-    allocations.sort((a, b) => a.class.localeCompare(b.class) || a.subject.localeCompare(b.subject));
+    if (list.firstElementChild && !list.firstElementChild.classList.contains('alloc-item')) {
+        list.innerHTML = '';
+    }
 
-    list.innerHTML = allocations.map((a, i) => `
-        <div class="flex items-center justify-between p-3 border-b border-slate-100 hover:bg-slate-50 ${a.active ? '' : 'opacity-50'}">
-            <div class="flex items-center gap-3 overflow-hidden">
-                <input type="checkbox" ${a.active ? 'checked' : ''} onchange="toggleAllocationActive(${i})" class="rounded text-indigo-600">
-                <div class="w-3 h-3 rounded-full flex-shrink-0" style="background:${a.bgColor || a.color || '#ccc'}"></div>
-                <div class="min-w-0">
-                    <div class="text-sm font-bold text-slate-800 truncate">
-                        ${escapeHTML(a.class)} • ${escapeHTML(a.subject)}
-                        ${a.count > 1 ? `<span class="text-xs bg-indigo-100 text-indigo-700 px-1 rounded ml-1">${a.count}x</span>` : ''}
-                    </div>
-                    <div class="text-xs text-slate-500 cursor-pointer hover:text-indigo-600 flex items-center gap-1"
-                        onclick="openAvailabilityModal('${escapeHTML(a.teacher)}')" title="Configurar Folgas">
-                        <i data-lucide="user" class="w-3 h-3"></i> ${escapeHTML(a.teacher)}
+    const existingNodes = new Map();
+    Array.from(list.children).forEach(child => {
+        if (child.dataset.allocId) {
+            existingNodes.set(String(child.dataset.allocId), child);
+        } else {
+            child.remove();
+        }
+    });
+
+    allocations.forEach(a => {
+        let el = existingNodes.get(String(a.id));
+
+        if (!el) {
+            el = document.createElement('div');
+            el.className = "alloc-item flex items-center justify-between p-3 border-b border-slate-100 hover:bg-slate-50 transition-all";
+            el.dataset.allocId = a.id;
+
+            el.innerHTML = `
+                <div class="flex items-center gap-3 overflow-hidden">
+                    <input type="checkbox" class="alloc-toggle-btn rounded text-indigo-600 transition cursor-pointer">
+                    <div class="alloc-color w-3 h-3 rounded-full flex-shrink-0"></div>
+                    <div class="min-w-0">
+                        <div class="alloc-title text-sm font-bold text-slate-800 truncate"></div>
+                        <div class="alloc-teacher-btn text-xs text-slate-500 cursor-pointer hover:text-indigo-600 flex items-center gap-1" title="Configurar Folgas">
+                            <i data-lucide="user" class="w-3 h-3"></i> <span class="teacher-name"></span>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <button onclick="removeAllocation(${i})" class="text-slate-400 hover:text-red-500 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
-        </div>
-    `).join('');
+                <button class="alloc-remove-btn text-slate-400 hover:text-red-500 p-1 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            `;
+        }
+
+        if (a.active) {
+            el.classList.remove('opacity-50');
+        } else {
+            el.classList.add('opacity-50');
+        }
+
+        const checkbox = el.querySelector('.alloc-toggle-btn');
+        if (checkbox && checkbox.checked !== a.active) checkbox.checked = a.active;
+
+        const colorDiv = el.querySelector('.alloc-color');
+        const color = a.bgColor || a.color || '#ccc';
+        if (colorDiv && colorDiv.style.backgroundColor !== color) colorDiv.style.backgroundColor = color;
+
+        const titleDiv = el.querySelector('.alloc-title');
+        const countBadge = a.count > 1 ? `<span class="text-xs bg-indigo-100 text-indigo-700 px-1 rounded ml-1">${a.count}x</span>` : '';
+        const newTitleHTML = `${escapeHTML(a.class)} • ${escapeHTML(a.subject)}${countBadge}`;
+        if (titleDiv && titleDiv.innerHTML !== newTitleHTML) titleDiv.innerHTML = newTitleHTML;
+
+        const teacherSpan = el.querySelector('.teacher-name');
+        if (teacherSpan && teacherSpan.innerText !== a.teacher) teacherSpan.innerText = a.teacher;
+
+        const teacherBtn = el.querySelector('.alloc-teacher-btn');
+        if (teacherBtn && teacherBtn.dataset.teacherName !== a.teacher) teacherBtn.dataset.teacherName = a.teacher;
+
+        list.appendChild(el);
+        existingNodes.delete(String(a.id));
+    });
+
+    existingNodes.forEach(node => node.remove());
 
     if (typeof lucide !== 'undefined') lucide.createIcons();
     updateDashboard();
 }
 
-function toggleAllocationActive(i) {
-    if (allocations[i]) {
-        allocations[i].active = !allocations[i].active;
+function toggleAllocationActiveById(id) {
+    const alloc = allocations.find(a => String(a.id) === String(id));
+    if (alloc) {
+        alloc.active = !alloc.active;
         renderAllocations();
         saveData();
+    }
+}
+
+function removeAllocationById(id) {
+    const idx = allocations.findIndex(a => String(a.id) === String(id));
+    if (idx !== -1) {
+        recordHistory();
+        allocations.splice(idx, 1);
+        renderAllocations();
+        saveData();
+    }
+}
+
+function toggleAllocationActive(i) {
+    if (allocations[i]) {
+        toggleAllocationActiveById(allocations[i].id);
     }
 }
 
 function removeAllocation(i) {
     if (allocations[i]) {
-        recordHistory();
-        allocations.splice(i, 1);
-        renderAllocations();
-        saveData();
+        removeAllocationById(allocations[i].id);
     }
 }
-
 // =================================================================
 // 7. SISTEMA DE PROFESSORES
 // =================================================================
