@@ -1,0 +1,11 @@
+{
+  "name": "sistema-gestao-escolar",
+  "version": "1.0.0",
+  "description": "Sistema de Gestão Escolar",
+  "scripts": {
+    "test": "node --test js/*.test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

@@ -187,11 +187,6 @@ function escapeHTML(str) {
     }[tag]));
 }
 
-function stringToColor(str) {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
-    return `hsl(${Math.abs(hash) % 360}, 65%, 85%)`;
-}
 
 function getContrastYIQ(hslStr) {
     return '#1e293b';
@@ -201,10 +196,6 @@ function getInitials(name) {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 }
 
-function getRandomColor() {
-    const colors = ['#ef4444', '#f97316', '#f59e0b', '#84cc16', '#10b981', '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', '#d946ef', '#f43f5e'];
-    return colors[Math.floor(Math.random() * colors.length)];
-}
 
 // =================================================================
 // 4. PERSISTÊNCIA (LOAD/SAVE)
@@ -612,7 +603,7 @@ function addAllocation() {
         allocations = allocations.filter(a => !(a.class === cls && a.subject === subjectName));
 
         allocations.push({
-            id: Date.now() + Math.random(),
+            id: Date.now(),
             class: cls,
             subject: subjectName,
             teacher: teacherName,
@@ -634,22 +625,55 @@ function renderAllocations() {
     const list = document.getElementById('allocationsList');
     if (!list) return;
 
+    // Ensure all allocations have IDs (migration for existing data)
+    let needsSave = false;
+    allocations.forEach(a => {
+        if (!a.id) {
+            a.id = Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+            needsSave = true;
+        }
+    });
+    if (needsSave) saveData();
+
+    if (!list.dataset.hasListeners) {
+        list.addEventListener('click', (e) => {
+            const toggleBtn = e.target.closest('.alloc-toggle-btn');
+            if (toggleBtn) {
+                const item = toggleBtn.closest('.alloc-item');
+                if (item) toggleAllocationActiveById(item.dataset.allocId);
+                return;
+            }
+
+            const removeBtn = e.target.closest('.alloc-remove-btn');
+            if (removeBtn) {
+                const item = removeBtn.closest('.alloc-item');
+                if (item) removeAllocationById(item.dataset.allocId);
+                return;
+            }
+
+            const teacherBtn = e.target.closest('.alloc-teacher-btn');
+            if (teacherBtn) {
+                openAvailabilityModal(teacherBtn.dataset.teacherName);
+            }
+        });
+        list.dataset.hasListeners = 'true';
+    }
+
     allocations.sort((a, b) => a.class.localeCompare(b.class) || a.subject.localeCompare(b.subject));
 
     if (!allocations.length) {
         list.innerHTML = `<div class="p-4 text-center text-slate-400 text-sm">Nenhuma aula atribuída.</div>`;
-        updateDashboard();
         return;
     }
 
-    if (list.firstElementChild && !list.firstElementChild.id && list.firstElementChild.className.includes('text-slate-400')) {
+    if (list.firstElementChild && !list.firstElementChild.classList.contains('alloc-item')) {
         list.innerHTML = '';
     }
 
     const existingNodes = new Map();
     Array.from(list.children).forEach(child => {
         if (child.dataset.allocId) {
-            existingNodes.set(child.dataset.allocId, child);
+            existingNodes.set(String(child.dataset.allocId), child);
         } else {
             child.remove();
         }
@@ -660,27 +684,22 @@ function renderAllocations() {
 
         if (!el) {
             el = document.createElement('div');
-            el.className = "flex items-center justify-between p-3 border-b border-slate-100 hover:bg-slate-50 transition-all";
-            el.id = `alloc-${a.id}`;
+            el.className = "alloc-item flex items-center justify-between p-3 border-b border-slate-100 hover:bg-slate-50 transition-all";
             el.dataset.allocId = a.id;
 
             el.innerHTML = `
                 <div class="flex items-center gap-3 overflow-hidden">
-                    <input type="checkbox" class="alloc-check rounded text-indigo-600 transition cursor-pointer">
+                    <input type="checkbox" class="alloc-toggle-btn rounded text-indigo-600 transition cursor-pointer">
                     <div class="alloc-color w-3 h-3 rounded-full flex-shrink-0"></div>
                     <div class="min-w-0">
                         <div class="alloc-title text-sm font-bold text-slate-800 truncate"></div>
-                        <div class="alloc-teacher text-xs text-slate-500 cursor-pointer hover:text-indigo-600 flex items-center gap-1" title="Configurar Folgas">
+                        <div class="alloc-teacher-btn text-xs text-slate-500 cursor-pointer hover:text-indigo-600 flex items-center gap-1" title="Configurar Folgas">
                             <i data-lucide="user" class="w-3 h-3"></i> <span class="teacher-name"></span>
                         </div>
                     </div>
                 </div>
-                <button class="alloc-remove text-slate-400 hover:text-red-500 p-1 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                <button class="alloc-remove-btn text-slate-400 hover:text-red-500 p-1 transition"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
             `;
-
-            el.querySelector('.alloc-check').addEventListener('change', () => toggleAllocationActiveById(a.id));
-            el.querySelector('.alloc-teacher').addEventListener('click', () => openAvailabilityModal(a.teacher));
-            el.querySelector('.alloc-remove').addEventListener('click', () => removeAllocationById(a.id));
         }
 
         if (a.active) {
@@ -689,20 +708,23 @@ function renderAllocations() {
             el.classList.add('opacity-50');
         }
 
-        const checkbox = el.querySelector('.alloc-check');
-        if (checkbox.checked !== a.active) checkbox.checked = a.active;
+        const checkbox = el.querySelector('.alloc-toggle-btn');
+        if (checkbox && checkbox.checked !== a.active) checkbox.checked = a.active;
 
         const colorDiv = el.querySelector('.alloc-color');
         const color = a.bgColor || a.color || '#ccc';
-        if (colorDiv.style.background !== color) colorDiv.style.background = color;
+        if (colorDiv && colorDiv.style.backgroundColor !== color) colorDiv.style.backgroundColor = color;
 
         const titleDiv = el.querySelector('.alloc-title');
         const countBadge = a.count > 1 ? `<span class="text-xs bg-indigo-100 text-indigo-700 px-1 rounded ml-1">${a.count}x</span>` : '';
         const newTitleHTML = `${escapeHTML(a.class)} • ${escapeHTML(a.subject)}${countBadge}`;
-        if (titleDiv.innerHTML !== newTitleHTML) titleDiv.innerHTML = newTitleHTML;
+        if (titleDiv && titleDiv.innerHTML !== newTitleHTML) titleDiv.innerHTML = newTitleHTML;
 
         const teacherSpan = el.querySelector('.teacher-name');
-        if (teacherSpan.innerText !== a.teacher) teacherSpan.innerText = a.teacher;
+        if (teacherSpan && teacherSpan.innerText !== a.teacher) teacherSpan.innerText = a.teacher;
+
+        const teacherBtn = el.querySelector('.alloc-teacher-btn');
+        if (teacherBtn && teacherBtn.dataset.teacherName !== a.teacher) teacherBtn.dataset.teacherName = a.teacher;
 
         list.appendChild(el);
         existingNodes.delete(String(a.id));
@@ -715,7 +737,7 @@ function renderAllocations() {
 }
 
 function toggleAllocationActiveById(id) {
-    const alloc = allocations.find(a => a.id == id);
+    const alloc = allocations.find(a => String(a.id) === String(id));
     if (alloc) {
         alloc.active = !alloc.active;
         renderAllocations();
@@ -724,7 +746,7 @@ function toggleAllocationActiveById(id) {
 }
 
 function removeAllocationById(id) {
-    const idx = allocations.findIndex(a => a.id == id);
+    const idx = allocations.findIndex(a => String(a.id) === String(id));
     if (idx !== -1) {
         recordHistory();
         allocations.splice(idx, 1);
@@ -734,13 +756,16 @@ function removeAllocationById(id) {
 }
 
 function toggleAllocationActive(i) {
-    if (allocations[i]) toggleAllocationActiveById(allocations[i].id);
+    if (allocations[i]) {
+        toggleAllocationActiveById(allocations[i].id);
+    }
 }
 
 function removeAllocation(i) {
-    if (allocations[i]) removeAllocationById(allocations[i].id);
+    if (allocations[i]) {
+        removeAllocationById(allocations[i].id);
+    }
 }
-
 // =================================================================
 // 7. SISTEMA DE PROFESSORES
 // =================================================================
@@ -788,7 +813,7 @@ function renderTeacherList() {
 
     teacherRegistry.forEach(teacher => {
         let subjectsBadges = teacher.subjects.length > 0
-            ? teacher.subjects.slice(0, 3).map(s => `<span class="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100">${s}</span>`).join('')
+            ? teacher.subjects.slice(0, 3).map(s => `<span class="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded border border-indigo-100">${escapeHTML(s)}</span>`).join('')
             : '<span class="text-[10px] text-slate-400 italic">Nenhuma disciplina</span>';
 
         if (teacher.subjects.length > 3) subjectsBadges += `<span class="text-[10px] text-slate-400 ml-1">+${teacher.subjects.length - 3}</span>`;
@@ -804,7 +829,7 @@ function renderTeacherList() {
                     ${getInitials(teacher.name)}
                 </div>
                 <div class="overflow-hidden">
-                    <h4 class="font-bold text-slate-800 text-sm truncate">${teacher.name}</h4>
+                    <h4 class="font-bold text-slate-800 text-sm truncate">${escapeHTML(teacher.name)}</h4>
                     <div class="flex flex-wrap gap-1 mt-1">
                         ${subjectsBadges}
                     </div>
@@ -896,8 +921,8 @@ function renderTeacherSubjectMapping(teacherName) {
                     onchange="toggleSubjectClassesArea('${safeSubId}', this.checked)">
 
                 <div class="flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-full" style="background-color: ${sub.defaultColor}"></div>
-                    <span class="font-bold text-slate-700 text-sm">${sub.name}</span>
+                    <div class="w-3 h-3 rounded-full" style="background-color: ${escapeHTML(sub.defaultColor)}"></div>
+                    <span class="font-bold text-slate-700 text-sm">${escapeHTML(sub.name)}</span>
                 </div>
             </div>
             <span class="text-xs font-medium text-slate-400" id="count_sub_${safeSubId}">
@@ -1193,21 +1218,28 @@ function renderSubjectsList() {
         div.className = "flex justify-between items-center bg-white p-2 rounded border border-slate-100 hover:shadow-sm transition group";
 
         const countBadge = sub.defaultCount
-            ? `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded ml-2 border border-slate-200" title="Aulas por semana">${sub.defaultCount} aulas</span>`
+            ? `<span class="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded ml-2 border border-slate-200" title="Aulas por semana">${escapeHTML(sub.defaultCount)} aulas</span>`
             : '';
 
         div.innerHTML = `
             <div class="flex items-center gap-2">
-                <div class="w-4 h-4 rounded-full shadow-sm" style="background-color: ${sub.defaultColor}"></div>
+                <div class="w-4 h-4 rounded-full shadow-sm" style="background-color: ${escapeHTML(sub.defaultColor)}"></div>
                 <div class="flex flex-col">
-                    <span class="text-sm font-medium text-slate-700 leading-none">${sub.name}</span>
+                    <span class="text-sm font-medium text-slate-700 leading-none">${escapeHTML(sub.name)}</span>
                 </div>
                 ${countBadge}
             </div>
-            <button onclick="removeSubject('${sub.id}')" class="text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">
+            <button data-subject-id="${escapeHTML(sub.id)}" class="remove-subject-btn text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition">
                 <i data-lucide="trash-2" class="w-4 h-4"></i>
             </button>
         `;
+
+        const removeBtn = div.querySelector('.remove-subject-btn');
+        if (removeBtn) {
+            removeBtn.addEventListener('click', function() {
+                removeSubject(sub.id);
+            });
+        }
         container.appendChild(div);
     });
 
